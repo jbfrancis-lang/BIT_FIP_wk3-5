@@ -8,7 +8,7 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
-        value: 24.14.1
+        value: 22.21.0
       - key: OPENAI_MODEL
         value: gpt-4.1-mini
       - key: OPENAI_VISION_MODEL

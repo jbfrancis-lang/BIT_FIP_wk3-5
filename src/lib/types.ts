@@ -110,6 +110,33 @@ export type ContactRoute = {
   verified?: boolean;
 };
 
+export type RecipientFitCriteria = {
+  decisionAuthority: number;
+  executionRelevance: number;
+  externalCollaborationLikelihood: number;
+  publicContactability: number;
+  warmIntroPotential: number;
+  overall: number;
+};
+
+export type ContactRoutePriority = {
+  rank: number;
+  route: ContactRoute;
+  reason: string;
+};
+
+export type RecipientFit = {
+  primaryDepartment: string;
+  alternativeDepartments: string[];
+  recommendedRecipientTitle: string;
+  criteria: RecipientFitCriteria;
+  reasoning: string;
+  firstAction: string;
+  userActionChecklist: string[];
+  contactRoutePriority: ContactRoutePriority[];
+  noPublicEmailNotice: string;
+};
+
 export type ContactChannels = {
   website?: string;
   contactPage?: string;
@@ -117,6 +144,25 @@ export type ContactChannels = {
   linkedinUrl?: string;
   routes?: ContactRoute[];
   notes?: string;
+};
+
+export type CompanyValueTier = "Tier 1" | "Tier 2" | "Tier 3";
+export type DiscoverySignalLevel = "상" | "중" | "하";
+
+export type CompanyDiscoveryProfile = {
+  valueTier: CompanyValueTier;
+  valueTierReason: string;
+  collaborationPotential: DiscoverySignalLevel;
+  collaborationPotentialScore: number;
+  problemOpportunitySignal: DiscoverySignalLevel;
+  problemOpportunityScore: number;
+  contactability: DiscoverySignalLevel;
+  contactabilityScore: number;
+  contactValueScore: number;
+  contactValueReason: string;
+  discoveryTags: string[];
+  targetRationale: string;
+  recommendedSearchQueries: string[];
 };
 
 export type CompanyLead = {
@@ -131,8 +177,10 @@ export type CompanyLead = {
   possibleCollaborationTypes: CollaborationType[];
   contact: ContactChannels;
   suggestedDepartment: string;
+  recipientFit?: RecipientFit;
   sourceLinks: string[];
   notes: string;
+  discovery?: CompanyDiscoveryProfile;
 };
 
 export type CompanyScore = {
@@ -172,6 +220,7 @@ export type ProjectProposalOutput = {
   proposalTitle: string;
   proposalBackground: string;
   companyProblemDefinition: string;
+  whyNow: string;
   projectGoals: string;
   keyQuestions: string;
   scopeOfWork: string;
@@ -181,6 +230,7 @@ export type ProjectProposalOutput = {
   expectedImpact: string;
   societyFit: string;
   collaborationRequests: string;
+  qualityChecklist: string[];
   onePageSummary: string;
 };
 
@@ -212,19 +262,30 @@ export type ColdEmailRequest = {
   tone: EmailTone;
   length: EmailLength;
   cta: EmailCta;
+  recipientName: string;
   senderName: string;
   senderRole: string;
+  senderEmail: string;
+  senderPhone: string;
+  projectPeriod: string;
+  societyOutreachIntro: string;
+  societyOutreachStrength: string;
+  collaborationHistorySummary: string;
   optionalAttachmentMention: string;
   scoreContext?: CompanyScore | null;
 };
 
 export type ColdEmailOutput = {
   subjectLines: string[];
+  messageStrategy: string;
+  linkedinConnectionRequest: string;
+  linkedinAcceptedMessage: string;
   emailBody: string;
   shortLinkedInDm: string;
   followUpEmailMessage: string;
   oneSentencePitch: string;
   suggestedCtaSentence: string;
+  qualityChecklist: string[];
 };
 
 export type SavedCompanyStatus =

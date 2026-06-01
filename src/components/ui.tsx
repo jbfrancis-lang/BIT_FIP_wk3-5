@@ -46,6 +46,7 @@ export function FitScore({ score }: { score: number }) {
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
         <div className={`h-2 rounded-full ${color}`} style={{ width: `${Math.max(4, Math.min(score, 100))}%` }} />
       </div>
+      <p className="mt-1.5 text-[10px] leading-4 text-slate-400">산업 관련성, 문제 신호, 협업 가능성, 연락 가능성을 종합</p>
     </div>
   );
 }

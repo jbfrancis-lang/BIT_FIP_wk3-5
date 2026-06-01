@@ -21,16 +21,16 @@ const capabilities = [
 ];
 
 const steps = [
-  "학회 정보와 소개자료 입력",
-  "AI 기반 포지셔닝 분석",
-  "기업 후보와 적합도 확인",
-  "제안서와 콜드메일 생성"
+  "기업 후보 발굴과 티어 분류",
+  "담당자와 연락 루트 확인",
+  "제안서와 콜드메일 생성",
+  "저장 후 후속 상태 관리"
 ];
 
 const previewItems = [
-  { label: "학회 포지셔닝", value: "협업 제안형", tone: "bg-teal-400" },
-  { label: "기업 적합도", value: "87점", tone: "bg-emerald-400" },
-  { label: "다음 액션", value: "콜드메일", tone: "bg-amber-300" }
+  { label: "기업 분류", value: "Tier 1", tone: "bg-teal-400" },
+  { label: "담당 루트", value: "전략/BD", tone: "bg-emerald-400" },
+  { label: "다음 액션", value: "후속 메일", tone: "bg-amber-300" }
 ];
 
 export default function HomePage() {
@@ -69,7 +69,7 @@ export default function HomePage() {
               <span className="block">바꿉니다</span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">
-              SocietyBridge AI는 학회 소개자료와 활동 이력을 분석해 협업 포지셔닝, 기업 후보, 프로젝트 제안 방향, 콜드메일까지 한 흐름으로 정리하는 산학협력 아웃리치 서비스입니다.
+              SocietyBridge AI는 학회 소개자료와 활동 이력을 분석해 기업 후보, 담당자/연락 루트, 프로젝트 제안 방향, 콜드메일, 후속 상태까지 한 흐름으로 정리하는 산학협력 아웃리치 서비스입니다.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link href="/profile" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:bg-teal-900">
@@ -86,7 +86,7 @@ export default function HomePage() {
             <div className="mt-7 grid gap-3 sm:grid-cols-3">
               <Metric value="4단계" label="입력부터 컨택까지" />
               <Metric value="한국어" label="분석 결과 정리" />
-              <Metric value="공개 정보" label="연락 채널 기준" />
+              <Metric value="후속 관리" label="상태와 다음 액션" />
             </div>
           </div>
 
@@ -97,14 +97,14 @@ export default function HomePage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold text-teal-700">실행 화면 미리보기</p>
-                  <p className="mt-1 text-xl font-bold">기업 협업 발굴 보드</p>
+                  <p className="mt-1 text-xl font-bold">산학협력 아웃리치 보드</p>
                 </div>
                 <div className="rounded-md border border-teal-100 bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800">분석 준비</div>
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
-                <DashboardTile icon={<FileText size={17} />} title="학회 입력" value="프로필" />
-                <DashboardTile icon={<BarChart3 size={17} />} title="AI 분석" value="포지셔닝" />
-                <DashboardTile icon={<Building2 size={17} />} title="기업 찾기" value="후보 발굴" />
+                <DashboardTile icon={<Building2 size={17} />} title="기업 발굴" value="Tier 분류" />
+                <DashboardTile icon={<BarChart3 size={17} />} title="연락 루트" value="담당 부서" />
+                <DashboardTile icon={<FileText size={17} />} title="산출물" value="제안/메일" />
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-3">
                 {previewItems.map((item) => (
@@ -146,7 +146,7 @@ export default function HomePage() {
             <p className="text-xs font-bold text-teal-700">서비스 개요</p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950">무엇을 도와주나요?</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              학회가 가진 경험을 기업 입장에서 읽히는 협업 제안 언어로 바꾸고, 다음 액션으로 바로 넘어갈 수 있게 정리합니다.
+              학회가 가진 경험을 기업 입장에서 읽히는 협업 제안 언어로 바꾸고, 컨택 대상 선정부터 후속 연락까지 다음 액션이 끊기지 않게 정리합니다.
             </p>
             <div className="mt-5 rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-7 text-slate-700">
               <div className="flex items-start gap-3">

@@ -1,4 +1,5 @@
 import type { CollaborationType, CompanyLead, CompanySize, ContactRoute } from "@/lib/types";
+import { evaluateCompanyDiscovery } from "@/lib/industryAcademic";
 
 type CompanySeed = {
   id: string;
@@ -35,8 +36,7 @@ function createCompany(seed: CompanySeed): CompanyLead {
   const linkedinUrl = seed.linkedinUrl || linkedinCompanySearchUrl(seed.name);
   const suggestedDepartment = seed.suggestedDepartment || inferSuggestedDepartment(seed);
   const contactNotes = seed.contactNotes || buildContactNotes(seed, suggestedDepartment, contactRoutes);
-
-  return {
+  const company: CompanyLead = {
     id: seed.id,
     name: seed.name,
     industry: seed.industry,
@@ -57,6 +57,11 @@ function createCompany(seed: CompanySeed): CompanyLead {
     suggestedDepartment,
     sourceLinks: uniqueLinks([seed.website, seed.contactPage, linkedinUrl, ...contactRoutes.map((route) => route.url), ...(seed.sourceLinks || [])]),
     notes: `${seed.notes} 컨택 메모: ${contactNotes}`
+  };
+
+  return {
+    ...company,
+    discovery: evaluateCompanyDiscovery(company)
   };
 }
 
@@ -178,6 +183,1097 @@ function buildContactNotes(seed: CompanySeed, suggestedDepartment: string, route
   const firstRoute = directRoute ? `${directRoute.label}를 1순위로 확인` : "직접 문의 루트가 불명확하므로 홈페이지와 LinkedIn 기업 검색을 병행";
   return `${firstRoute}하고, ${suggestedDepartment}에 맞춰 제안 주제를 분기하세요. ${linkedinGuide} 공개 프로필의 현재 재직 여부를 한 번 더 확인한 뒤 1촌 신청과 DM을 남기세요. ${seed.publicEmail ? `공개 이메일 ${seed.publicEmail} 사용 가능.` : noPublicEmailNotice}`;
 }
+
+const expansionCompanySeeds: CompanySeed[] = [
+  {
+    id: "company-hyundai-motor",
+    name: "현대자동차",
+    industry: "모빌리티/자동차",
+    website: "https://www.hyundai.com/kr/ko",
+    description: "완성차, 전기차, 수소차, 모빌리티 서비스를 운영하는 글로벌 자동차 기업입니다.",
+    recentBusinessContext: "전기차 전환, 브랜드 경험, MZ 고객 접점, 소프트웨어 중심 차량 경험이 중요합니다.",
+    likelyNeeds: ["전기차 고객 경험", "MZ 브랜드 접점", "모빌리티 서비스 전략"],
+    notes: "자동차 구매 여정과 미래 모빌리티 경험을 다루는 산학협력 후보입니다."
+  },
+  {
+    id: "company-kia",
+    name: "기아",
+    industry: "모빌리티/자동차",
+    website: "https://www.kia.com/kr",
+    description: "승용차, 전기차, PBV 등 모빌리티 제품과 서비스를 운영하는 자동차 기업입니다.",
+    recentBusinessContext: "PBV, 전기차 포지셔닝, 젊은 고객층 브랜드 선호 형성이 중요합니다.",
+    likelyNeeds: ["PBV 시장 기회", "전기차 포지셔닝", "젊은 고객 브랜드 인식"],
+    notes: "신규 모빌리티 카테고리의 고객 문제 정의와 GTM 제안에 적합합니다."
+  },
+  {
+    id: "company-lg-electronics",
+    name: "LG전자",
+    industry: "전자/가전",
+    website: "https://www.lge.co.kr/",
+    description: "가전, TV, IT 기기, 전장 등 생활 기술 제품을 제공하는 기업입니다.",
+    recentBusinessContext: "스마트홈, 구독형 가전, 프리미엄 경험, 가전 서비스화가 중요합니다.",
+    likelyNeeds: ["스마트홈 사용성", "가전 구독 서비스", "프리미엄 고객 경험"],
+    notes: "가전 제품을 서비스 경험으로 확장하는 프로젝트와 맞습니다."
+  },
+  {
+    id: "company-lg-uplus",
+    name: "LG유플러스",
+    industry: "통신/플랫폼",
+    website: "https://www.lguplus.com/",
+    description: "모바일, 인터넷, IPTV, B2B 솔루션과 콘텐츠 서비스를 운영하는 통신사입니다.",
+    recentBusinessContext: "통신 요금제 차별화, 콘텐츠 결합, 청년 고객 락인이 중요합니다.",
+    likelyNeeds: ["청년 요금제 니즈", "콘텐츠 결합 전략", "통신 고객 리텐션"],
+    notes: "통신 서비스 차별화와 청년 고객 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-cj-enm",
+    name: "CJ ENM",
+    industry: "미디어/엔터테인먼트",
+    website: "https://www.cjenm.com/",
+    description: "방송, 음악, 영화, 공연, 커머스 콘텐츠를 운영하는 종합 콘텐츠 기업입니다.",
+    recentBusinessContext: "K콘텐츠 글로벌 확장, 팬덤 커머스, 숏폼 소비 변화 대응이 중요합니다.",
+    likelyNeeds: ["K콘텐츠 팬덤", "콘텐츠 커머스", "숏폼 소비 분석"],
+    notes: "콘텐츠 산업 트렌드와 글로벌 팬덤 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-cj-cheiljedang",
+    name: "CJ제일제당",
+    industry: "식품/F&B",
+    website: "https://www.cj.co.kr/kr/index",
+    description: "식품, 바이오, 소재 사업을 운영하는 종합 식품 기업입니다.",
+    recentBusinessContext: "K푸드 글로벌화, HMR 차별화, 건강 지향 소비 변화가 중요합니다.",
+    likelyNeeds: ["K푸드 글로벌 전략", "HMR 소비자 니즈", "건강식 포지셔닝"],
+    notes: "식품 카테고리의 소비자 인사이트와 신제품 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-shinsegae",
+    name: "신세계",
+    industry: "리테일/백화점",
+    website: "https://www.shinsegae.com/",
+    description: "백화점과 프리미엄 유통 경험을 운영하는 리테일 기업입니다.",
+    recentBusinessContext: "오프라인 공간 경험, VIP 고객 관리, MZ 럭셔리 소비 접점이 중요합니다.",
+    likelyNeeds: ["오프라인 공간 경험", "MZ 럭셔리 소비", "멤버십 가치"],
+    notes: "리테일 공간의 경험 설계와 고객 세분화 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-lotte-shopping",
+    name: "롯데쇼핑",
+    industry: "리테일/커머스",
+    website: "https://www.lotteshopping.com/",
+    description: "백화점, 마트, 슈퍼, e커머스 등 유통 채널을 운영하는 기업입니다.",
+    recentBusinessContext: "옴니채널 전환, 오프라인 매장 효율, 멤버십 기반 고객 관리가 중요합니다.",
+    likelyNeeds: ["옴니채널 경험", "매장 방문 동기", "멤버십 리텐션"],
+    notes: "유통 채널 간 고객 이동과 오프라인 활성화 제안에 적합합니다."
+  },
+  {
+    id: "company-coupang",
+    name: "쿠팡",
+    industry: "이커머스/물류",
+    website: "https://www.coupang.com/",
+    description: "이커머스, 로켓배송, OTT, 물류 인프라를 운영하는 플랫폼 기업입니다.",
+    recentBusinessContext: "멤버십 가치, 카테고리 확장, 물류 경험 차별화가 중요합니다.",
+    likelyNeeds: ["와우 멤버십 가치", "카테고리 구매 전환", "배송 경험 차별화"],
+    notes: "커머스 리텐션과 멤버십 가치 제안 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-ssg",
+    name: "SSG.COM",
+    industry: "이커머스/리테일",
+    size: "mid_sized_company",
+    website: "https://www.ssg.com/",
+    description: "신세계 계열의 온라인 장보기와 라이프스타일 커머스 플랫폼입니다.",
+    recentBusinessContext: "온라인 장보기 차별화, 프리미엄 식품, 오프라인 연계가 중요합니다.",
+    likelyNeeds: ["장보기 재구매", "프리미엄 식품 경험", "온오프라인 연계"],
+    notes: "온라인 장보기 고객 여정과 리테일 연계 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-hyundai-department-store",
+    name: "현대백화점",
+    industry: "리테일/백화점",
+    website: "https://www.ehyundai.com/",
+    description: "백화점, 프리미엄 아울렛, 라이프스타일 공간을 운영하는 유통 기업입니다.",
+    recentBusinessContext: "공간형 리테일, 문화 콘텐츠, MZ 방문 동기 강화가 중요합니다.",
+    likelyNeeds: ["공간형 리테일", "MZ 방문 동기", "문화 콘텐츠 연계"],
+    notes: "오프라인 리테일을 경험형 공간으로 확장하는 프로젝트와 맞습니다."
+  },
+  {
+    id: "company-hyundai-card",
+    name: "현대카드",
+    industry: "금융/카드",
+    website: "https://www.hyundaicard.com/",
+    description: "카드, 금융, 브랜딩, 문화 마케팅을 결합한 금융 서비스를 제공합니다.",
+    recentBusinessContext: "프리미엄 카드 경험, PLCC, 문화 브랜딩과 고객 락인이 중요합니다.",
+    likelyNeeds: ["PLCC 가치", "문화 브랜딩", "카드 고객 리텐션"],
+    notes: "금융 서비스 브랜딩과 고객 경험 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-shinhan-bank",
+    name: "신한은행",
+    industry: "금융/은행",
+    website: "https://www.shinhan.com/",
+    description: "개인·기업 금융과 디지털 금융 서비스를 운영하는 은행입니다.",
+    recentBusinessContext: "모바일 뱅킹 경험, 청년 금융, 자산관리 서비스 진입 장벽이 중요합니다.",
+    likelyNeeds: ["청년 금융 니즈", "모바일 뱅킹 UX", "자산관리 진입 장벽"],
+    notes: "2030 금융 행동 리서치와 디지털 금융 제안에 적합합니다."
+  },
+  {
+    id: "company-kb-kookmin-bank",
+    name: "KB국민은행",
+    industry: "금융/은행",
+    website: "https://www.kbstar.com/",
+    description: "리테일 금융, 기업 금융, 자산관리 서비스를 제공하는 은행입니다.",
+    recentBusinessContext: "청년 고객 확보, 슈퍼앱 경쟁, 금융 생활 서비스 확장이 중요합니다.",
+    likelyNeeds: ["청년 고객 확보", "금융 앱 락인", "생활 금융 서비스"],
+    notes: "금융 플랫폼 경쟁과 청년 고객 유입 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-woori-bank",
+    name: "우리은행",
+    industry: "금융/은행",
+    website: "https://www.wooribank.com/",
+    description: "개인 금융, 기업 금융, 글로벌 금융 서비스를 운영하는 은행입니다.",
+    recentBusinessContext: "디지털 전환, 외국인·청년 고객, 생활 금융 접점 확대가 중요합니다.",
+    likelyNeeds: ["디지털 금융 전환", "청년 고객 경험", "생활 금융 접점"],
+    notes: "디지털 은행 경험과 신규 고객 세그먼트 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-kakao-bank",
+    name: "카카오뱅크",
+    industry: "금융/인터넷은행",
+    website: "https://www.kakaobank.com/",
+    description: "모바일 중심의 인터넷전문은행 서비스를 운영합니다.",
+    recentBusinessContext: "간편 금융 경험, 2030 고객 락인, 대출·투자 서비스 확장이 중요합니다.",
+    likelyNeeds: ["모바일 금융 습관", "2030 락인", "간편 금융 UX"],
+    notes: "모바일 금융 서비스의 사용자 경험과 신규 상품 제안에 적합합니다."
+  },
+  {
+    id: "company-kbank",
+    name: "케이뱅크",
+    industry: "금융/인터넷은행",
+    size: "mid_sized_company",
+    website: "https://www.kbanknow.com/",
+    description: "모바일 기반 예금, 대출, 투자 연계 금융 서비스를 제공하는 인터넷은행입니다.",
+    recentBusinessContext: "고객 유입, 예금·대출 차별화, 디지털 금융 신뢰 형성이 중요합니다.",
+    likelyNeeds: ["고객 유입 전략", "모바일 금융 신뢰", "상품 차별화"],
+    notes: "인터넷은행 경쟁 구도와 고객 획득 전략 분석에 적합합니다."
+  },
+  {
+    id: "company-mirae-asset",
+    name: "미래에셋증권",
+    industry: "금융/증권",
+    website: "https://securities.miraeasset.com/",
+    description: "투자, 자산관리, 해외주식, 연금 서비스를 제공하는 증권사입니다.",
+    recentBusinessContext: "개인 투자자 교육, 해외주식 경험, 청년 자산관리 니즈가 중요합니다.",
+    likelyNeeds: ["청년 투자 교육", "해외주식 UX", "자산관리 콘텐츠"],
+    notes: "대학생 투자 행동과 자산관리 진입 장벽 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-korea-investment",
+    name: "한국투자증권",
+    industry: "금융/증권",
+    website: "https://www.truefriend.com/",
+    description: "투자중개, 자산관리, IB 등 증권 서비스를 제공하는 금융 기업입니다.",
+    recentBusinessContext: "모바일 투자 경험, 청년 투자자 리텐션, 금융 콘텐츠 신뢰가 중요합니다.",
+    likelyNeeds: ["모바일 투자 경험", "투자자 리텐션", "금융 콘텐츠 신뢰"],
+    notes: "투자 앱 사용성과 금융 콘텐츠 전략 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-nh-investment",
+    name: "NH투자증권",
+    industry: "금융/증권",
+    website: "https://www.nhqv.com/",
+    description: "자산관리, 투자중개, 리서치와 디지털 투자 서비스를 운영합니다.",
+    recentBusinessContext: "초보 투자자 온보딩, ISA/연금 관심, 투자 정보 이해도가 중요합니다.",
+    likelyNeeds: ["초보 투자자 온보딩", "연금/절세 니즈", "투자 정보 UX"],
+    notes: "투자 정보 이해도와 청년 투자자 교육 제안에 적합합니다."
+  },
+  {
+    id: "company-samsung-life",
+    name: "삼성생명",
+    industry: "금융/보험",
+    website: "https://www.samsunglife.com/",
+    description: "생명보험, 연금, 자산관리 서비스를 제공하는 보험사입니다.",
+    recentBusinessContext: "보험 가입 인식, 디지털 보험 상담, 세대별 보장 니즈가 중요합니다.",
+    likelyNeeds: ["보험 인식 개선", "디지털 상담 경험", "세대별 보장 니즈"],
+    notes: "보험 서비스의 청년 고객 이해와 커뮤니케이션 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-hanwha-life",
+    name: "한화생명",
+    industry: "금융/보험",
+    website: "https://www.hanwhalife.com/",
+    description: "생명보험과 금융 플랫폼, 자산관리 서비스를 운영하는 보험사입니다.",
+    recentBusinessContext: "디지털 보험 플랫폼, MZ 보험 인식, 헬스케어 연계가 중요합니다.",
+    likelyNeeds: ["MZ 보험 인식", "헬스케어 연계", "디지털 보험 경험"],
+    notes: "보험과 헬스케어 결합형 서비스 기획에 적합합니다."
+  },
+  {
+    id: "company-samsung-fire",
+    name: "삼성화재",
+    industry: "금융/손해보험",
+    website: "https://www.samsungfire.com/",
+    description: "자동차보험, 장기보험, 일반보험과 디지털 보험 서비스를 제공합니다.",
+    recentBusinessContext: "자동차 보험 경쟁, 디지털 청구 경험, 생활 위험 관리 서비스가 중요합니다.",
+    likelyNeeds: ["디지털 보험 청구", "자동차보험 차별화", "생활 위험 관리"],
+    notes: "보험 고객 경험과 디지털 전환 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-bc-card",
+    name: "BC카드",
+    industry: "금융/결제",
+    website: "https://www.bccard.com/",
+    description: "카드 결제 인프라, 데이터, 가맹점 솔루션을 운영하는 결제 기업입니다.",
+    recentBusinessContext: "결제 데이터 활용, 가맹점 지원, 소비 트렌드 분석이 중요합니다.",
+    likelyNeeds: ["결제 데이터 인사이트", "가맹점 솔루션", "소비 트렌드 분석"],
+    notes: "결제 데이터 기반 시장 분석과 가맹점 가치 제안에 적합합니다."
+  },
+  {
+    id: "company-nicepay",
+    name: "NICE페이먼츠",
+    industry: "금융/PG",
+    size: "mid_sized_company",
+    website: "https://www.nicepayments.co.kr/",
+    description: "온라인 결제, PG, 정산 서비스를 제공하는 결제 인프라 기업입니다.",
+    recentBusinessContext: "소상공인 결제 경험, B2B 결제 안정성, 커머스 고객 확보가 중요합니다.",
+    likelyNeeds: ["B2B 결제 니즈", "소상공인 결제 경험", "커머스 고객 확보"],
+    notes: "B2B 결제 인프라의 고객 세분화 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-naver-financial",
+    name: "네이버파이낸셜",
+    industry: "금융/페이먼트",
+    size: "large_enterprise",
+    website: "https://www.naverfincorp.com/",
+    description: "네이버페이와 금융 서비스를 운영하는 핀테크 기업입니다.",
+    recentBusinessContext: "간편결제 락인, 쇼핑·예약 결제 연결, 금융 서비스 확장이 중요합니다.",
+    likelyNeeds: ["간편결제 락인", "커머스 결제 경험", "금융 서비스 전환"],
+    notes: "페이먼트와 커머스 경험을 연결한 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-samsung-card",
+    name: "삼성카드",
+    industry: "금융/카드",
+    website: "https://www.samsungcard.com/",
+    description: "신용카드, 데이터 기반 마케팅, 금융 서비스를 운영합니다.",
+    recentBusinessContext: "카드 혜택 피로도, 데이터 마케팅, 생활 플랫폼화가 중요합니다.",
+    likelyNeeds: ["카드 혜택 인식", "데이터 마케팅", "생활 플랫폼 전략"],
+    notes: "소비자 혜택 인식과 카드 상품 포지셔닝 분석에 적합합니다."
+  },
+  {
+    id: "company-lotte-card",
+    name: "롯데카드",
+    industry: "금융/카드",
+    website: "https://www.lottecard.co.kr/",
+    description: "신용카드와 데이터 기반 소비자 금융 서비스를 제공합니다.",
+    recentBusinessContext: "유통 계열 혜택, 고객 데이터 활용, 카드 상품 차별화가 중요합니다.",
+    likelyNeeds: ["유통 혜택 연계", "카드 상품 차별화", "소비 데이터 활용"],
+    notes: "유통-금융 결합형 카드 경험 제안에 적합합니다."
+  },
+  {
+    id: "company-tving",
+    name: "TVING",
+    industry: "OTT/콘텐츠",
+    size: "mid_sized_company",
+    website: "https://www.tving.com/",
+    description: "드라마, 예능, 스포츠 등 스트리밍 콘텐츠를 제공하는 OTT 서비스입니다.",
+    recentBusinessContext: "OTT 구독 유지, 스포츠 콘텐츠, 오리지널 콘텐츠 팬덤이 중요합니다.",
+    likelyNeeds: ["OTT 구독 리텐션", "콘텐츠 팬덤", "스포츠 시청 경험"],
+    notes: "OTT 서비스 리텐션과 콘텐츠 소비자 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-watcha",
+    name: "왓챠",
+    industry: "OTT/콘텐츠",
+    size: "mid_sized_company",
+    website: "https://watcha.com/",
+    description: "영화, 드라마 추천과 스트리밍 서비스를 운영하는 콘텐츠 플랫폼입니다.",
+    recentBusinessContext: "추천 경험, 구독 지속 이유, 콘텐츠 취향 데이터 활용이 중요합니다.",
+    likelyNeeds: ["추천 경험 개선", "구독 지속 이유", "콘텐츠 취향 분석"],
+    notes: "콘텐츠 추천과 취향 기반 커뮤니케이션 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-melon",
+    name: "멜론",
+    industry: "음악/플랫폼",
+    website: "https://www.melon.com/",
+    description: "음악 스트리밍, 차트, 아티스트 콘텐츠를 제공하는 음악 플랫폼입니다.",
+    recentBusinessContext: "음악 구독 리텐션, 팬덤 기능, 플레이리스트 경험이 중요합니다.",
+    likelyNeeds: ["음악 구독 리텐션", "팬덤 기능", "플레이리스트 UX"],
+    notes: "음악 플랫폼의 고객 락인과 팬덤 경험 분석에 적합합니다."
+  },
+  {
+    id: "company-genie-music",
+    name: "지니뮤직",
+    industry: "음악/플랫폼",
+    size: "mid_sized_company",
+    website: "https://www.geniemusic.co.kr/",
+    description: "음악 스트리밍과 오디오 콘텐츠 서비스를 제공하는 플랫폼입니다.",
+    recentBusinessContext: "음악 앱 차별화, 통신 결합 상품, 오디오 콘텐츠 확장이 중요합니다.",
+    likelyNeeds: ["음악 앱 차별화", "통신 결합 혜택", "오디오 콘텐츠 전략"],
+    notes: "음악 플랫폼 차별화와 구독 상품 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-bugs",
+    name: "벅스",
+    industry: "음악/플랫폼",
+    size: "mid_sized_company",
+    website: "https://music.bugs.co.kr/",
+    description: "음악 스트리밍과 고음질 음악 경험을 제공하는 플랫폼입니다.",
+    recentBusinessContext: "고음질 포지셔닝, 니치 음악 팬덤, 구독 유지가 중요합니다.",
+    likelyNeeds: ["고음질 음악 수요", "니치 팬덤", "구독 리텐션"],
+    notes: "음악 서비스 포지셔닝과 충성 고객 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-hybe",
+    name: "HYBE",
+    industry: "엔터테인먼트/팬덤",
+    website: "https://hybecorp.com/",
+    description: "아티스트 IP, 팬덤 플랫폼, 음악·콘텐츠 사업을 운영하는 엔터테인먼트 기업입니다.",
+    recentBusinessContext: "글로벌 팬덤 경험, IP 확장, 팬덤 커머스와 플랫폼 운영이 중요합니다.",
+    likelyNeeds: ["글로벌 팬덤 경험", "IP 확장", "팬덤 커머스"],
+    notes: "팬덤 플랫폼과 IP 비즈니스 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-sm-entertainment",
+    name: "SM엔터테인먼트",
+    industry: "엔터테인먼트/팬덤",
+    website: "https://www.smentertainment.com/",
+    description: "음악, 아티스트 IP, 팬덤 콘텐츠를 운영하는 엔터테인먼트 기업입니다.",
+    recentBusinessContext: "팬덤 데이터, 글로벌 투어, IP 기반 상품화가 중요합니다.",
+    likelyNeeds: ["팬덤 데이터 활용", "글로벌 팬 경험", "IP 상품화"],
+    notes: "K팝 팬덤 리서치와 콘텐츠 커머스 제안에 적합합니다."
+  },
+  {
+    id: "company-yg-entertainment",
+    name: "YG엔터테인먼트",
+    industry: "엔터테인먼트/팬덤",
+    website: "https://www.ygfamily.com/",
+    description: "아티스트 매니지먼트, 음악, 공연, 콘텐츠 사업을 운영합니다.",
+    recentBusinessContext: "글로벌 팬덤 관리, 아티스트 IP 확장, 디지털 콘텐츠 전략이 중요합니다.",
+    likelyNeeds: ["글로벌 팬덤 관리", "디지털 콘텐츠", "IP 확장"],
+    notes: "팬덤 참여와 글로벌 콘텐츠 전략 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-jyp-entertainment",
+    name: "JYP엔터테인먼트",
+    industry: "엔터테인먼트/팬덤",
+    website: "https://www.jype.com/",
+    description: "아티스트 IP와 글로벌 음악 콘텐츠를 운영하는 엔터테인먼트 기업입니다.",
+    recentBusinessContext: "글로벌 팬덤 유지, 아티스트 브랜드, 커뮤니티 경험이 중요합니다.",
+    likelyNeeds: ["글로벌 팬덤 유지", "아티스트 브랜드", "커뮤니티 경험"],
+    notes: "글로벌 팬덤 커뮤니케이션과 브랜드 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-nexon",
+    name: "넥슨",
+    industry: "게임/엔터테인먼트",
+    website: "https://www.nexon.com/",
+    description: "온라인 게임과 글로벌 게임 IP를 운영하는 게임 기업입니다.",
+    recentBusinessContext: "라이브 서비스 운영, IP 확장, 신규 유저 유입과 복귀 유저 관리가 중요합니다.",
+    likelyNeeds: ["게임 라이브 서비스", "복귀 유저 전략", "IP 확장"],
+    notes: "게임 고객 세그먼트와 리텐션 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-netmarble",
+    name: "넷마블",
+    industry: "게임/엔터테인먼트",
+    website: "https://www.netmarble.com/",
+    description: "모바일 게임과 글로벌 IP 기반 게임을 운영하는 게임 기업입니다.",
+    recentBusinessContext: "모바일 게임 경쟁, IP 협업, 글로벌 유저 획득 비용이 중요합니다.",
+    likelyNeeds: ["모바일 게임 마케팅", "IP 협업 전략", "글로벌 유저 획득"],
+    notes: "게임 마케팅과 IP 기반 신규 유저 확보 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-ncsoft",
+    name: "엔씨소프트",
+    industry: "게임/엔터테인먼트",
+    website: "https://www.ncsoft.com/",
+    description: "온라인·모바일 게임 IP와 AI 기술을 운영하는 게임 기업입니다.",
+    recentBusinessContext: "IP 재활성화, 신규 유저 인식, 게임 커뮤니티 신뢰가 중요합니다.",
+    likelyNeeds: ["IP 재활성화", "게임 커뮤니티 신뢰", "신규 유저 인식"],
+    notes: "게임 브랜드 인식과 커뮤니티 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-pearlabyss",
+    name: "펄어비스",
+    industry: "게임/엔터테인먼트",
+    size: "mid_sized_company",
+    website: "https://www.pearlabyss.com/",
+    description: "글로벌 MMORPG와 게임 IP를 개발·운영하는 게임 기업입니다.",
+    recentBusinessContext: "글로벌 게임 IP 확장, 신규 타이틀 기대감, 커뮤니티 관리가 중요합니다.",
+    likelyNeeds: ["글로벌 게임 커뮤니티", "IP 확장", "신규 타이틀 기대 관리"],
+    notes: "글로벌 게임 팬덤과 커뮤니티 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-line",
+    name: "LINE",
+    industry: "메신저/플랫폼",
+    website: "https://linecorp.com/",
+    description: "메신저, 콘텐츠, 핀테크, 광고 서비스를 운영하는 플랫폼 기업입니다.",
+    recentBusinessContext: "일본·동남아 플랫폼 생태계, 메신저 기반 서비스 확장이 중요합니다.",
+    likelyNeeds: ["메신저 기반 서비스", "글로벌 플랫폼 전략", "광고/콘텐츠 접점"],
+    notes: "글로벌 플랫폼 생태계와 메신저 기반 서비스 제안에 적합합니다."
+  },
+  {
+    id: "company-bunjang",
+    name: "번개장터",
+    industry: "중고거래/커머스",
+    size: "mid_sized_company",
+    website: "https://m.bunjang.co.kr/",
+    description: "중고거래와 취향 기반 리커머스 서비스를 운영하는 플랫폼입니다.",
+    recentBusinessContext: "거래 신뢰, 취향 기반 탐색, 리커머스 성장성이 중요합니다.",
+    likelyNeeds: ["거래 신뢰", "취향 기반 탐색", "리커머스 성장"],
+    notes: "리커머스 고객 신뢰와 세그먼트 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-idus",
+    name: "아이디어스",
+    industry: "핸드메이드/커머스",
+    size: "mid_sized_company",
+    website: "https://www.idus.com/",
+    description: "핸드메이드 작품과 작가 기반 커머스 플랫폼입니다.",
+    recentBusinessContext: "작가 생태계, 선물 수요, 커머스 신뢰와 재구매가 중요합니다.",
+    likelyNeeds: ["작가 생태계", "선물 수요", "재구매 전략"],
+    notes: "크리에이터 커머스와 선물 시장 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-brandi",
+    name: "브랜디",
+    industry: "패션/커머스",
+    size: "mid_sized_company",
+    website: "https://www.brandi.co.kr/",
+    description: "여성 패션 커머스와 쇼핑몰 솔루션을 운영하는 플랫폼입니다.",
+    recentBusinessContext: "패션 셀러 경쟁, 빠른 배송, 개인화 추천과 고객 리텐션이 중요합니다.",
+    likelyNeeds: ["패션 셀러 성장", "개인화 추천", "빠른 배송 경험"],
+    notes: "패션 플랫폼의 셀러 생태계와 고객 리텐션 분석에 적합합니다."
+  },
+  {
+    id: "company-wconcept",
+    name: "W컨셉",
+    industry: "패션/커머스",
+    size: "mid_sized_company",
+    website: "https://www.wconcept.co.kr/",
+    description: "디자이너 브랜드 중심의 패션 커머스 플랫폼입니다.",
+    recentBusinessContext: "디자이너 브랜드 발견, 프리미엄 패션 고객, 콘텐츠 기반 구매 전환이 중요합니다.",
+    likelyNeeds: ["브랜드 발견 경험", "프리미엄 고객", "콘텐츠 구매 전환"],
+    notes: "브랜드 큐레이션과 프리미엄 커머스 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-croquis-zigzag",
+    name: "지그재그",
+    industry: "패션/커머스",
+    size: "mid_sized_company",
+    website: "https://zigzag.kr/",
+    description: "여성 패션 쇼핑몰 탐색과 구매를 연결하는 패션 플랫폼입니다.",
+    recentBusinessContext: "쇼핑몰 탐색 효율, 개인화 추천, 앱 재방문이 중요합니다.",
+    likelyNeeds: ["개인화 탐색", "앱 재방문", "쇼핑몰 선택 기준"],
+    notes: "패션 앱 탐색 경험과 구매 전환 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-gentlemonster",
+    name: "젠틀몬스터",
+    industry: "패션/아이웨어",
+    website: "https://www.gentlemonster.com/",
+    description: "아이웨어, 공간 경험, 글로벌 패션 브랜드를 운영합니다.",
+    recentBusinessContext: "브랜드 공간 경험, 글로벌 팬덤, 제품-콘텐츠 결합이 중요합니다.",
+    likelyNeeds: ["공간 경험", "글로벌 브랜드 팬덤", "제품 콘텐츠화"],
+    notes: "브랜드 경험과 오프라인 공간 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-fila-korea",
+    name: "휠라코리아",
+    industry: "패션/스포츠",
+    website: "https://www.fila.co.kr/",
+    description: "스포츠웨어와 라이프스타일 패션 브랜드를 운영합니다.",
+    recentBusinessContext: "브랜드 리포지셔닝, 스포츠 라이프스타일, MZ 고객 회복이 중요합니다.",
+    likelyNeeds: ["브랜드 리포지셔닝", "스포츠 라이프스타일", "MZ 고객 회복"],
+    notes: "패션 브랜드 포지셔닝과 고객 인식 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-spao",
+    name: "SPAO",
+    industry: "패션/SPA",
+    website: "https://www.spao.com/",
+    description: "캐주얼 SPA 패션 브랜드로 의류와 라이프스타일 상품을 판매합니다.",
+    recentBusinessContext: "캐릭터 협업, 가격 경쟁력, 오프라인 매장 경험이 중요합니다.",
+    likelyNeeds: ["캐릭터 협업", "가격 경쟁력", "매장 경험"],
+    notes: "SPA 브랜드 협업 상품과 MZ 매장 방문 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-innisfree",
+    name: "이니스프리",
+    industry: "뷰티/화장품",
+    website: "https://www.innisfree.com/kr/ko/Main.do",
+    description: "자연주의 이미지를 기반으로 스킨케어와 메이크업 제품을 판매하는 뷰티 브랜드입니다.",
+    recentBusinessContext: "브랜드 리뉴얼, 클린뷰티, 글로벌 고객과 Z세대 접점이 중요합니다.",
+    likelyNeeds: ["브랜드 리뉴얼", "클린뷰티 인식", "Z세대 접점"],
+    notes: "뷰티 브랜드 인식과 리브랜딩 효과 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-laneige",
+    name: "라네즈",
+    industry: "뷰티/화장품",
+    website: "https://www.laneige.com/kr/ko/index.html",
+    description: "스킨케어와 글로벌 뷰티 제품을 운영하는 화장품 브랜드입니다.",
+    recentBusinessContext: "글로벌 스킨케어 경쟁, 제품 라인 인지도, 콘텐츠 마케팅이 중요합니다.",
+    likelyNeeds: ["글로벌 뷰티 인지도", "제품 라인 포지셔닝", "콘텐츠 마케팅"],
+    notes: "글로벌 뷰티 브랜드의 고객 인식 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-romand",
+    name: "롬앤",
+    industry: "뷰티/색조",
+    size: "mid_sized_company",
+    website: "https://romand.co.kr/",
+    description: "색조 메이크업과 트렌디한 뷰티 콘텐츠를 중심으로 성장한 브랜드입니다.",
+    recentBusinessContext: "색조 트렌드, 글로벌 K뷰티 팬덤, SNS 기반 구매 전환이 중요합니다.",
+    likelyNeeds: ["색조 트렌드", "SNS 구매 전환", "글로벌 K뷰티 팬덤"],
+    notes: "SNS 기반 뷰티 커머스와 글로벌 고객 분석에 적합합니다."
+  },
+  {
+    id: "company-medicube",
+    name: "메디큐브",
+    industry: "뷰티/디바이스",
+    size: "mid_sized_company",
+    website: "https://themedicube.co.kr/",
+    description: "스킨케어와 홈 뷰티 디바이스를 판매하는 뷰티 브랜드입니다.",
+    recentBusinessContext: "홈 뷰티 디바이스 신뢰, 제품 효능 커뮤니케이션, 글로벌 확장이 중요합니다.",
+    likelyNeeds: ["홈 뷰티 디바이스 신뢰", "효능 커뮤니케이션", "글로벌 확장"],
+    notes: "뷰티 디바이스 구매 장벽과 메시지 전략 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-osulloc",
+    name: "오설록",
+    industry: "F&B/차",
+    website: "https://www.osulloc.com/",
+    description: "차, 티푸드, 티하우스 경험을 제공하는 프리미엄 차 브랜드입니다.",
+    recentBusinessContext: "차 문화 대중화, 선물 수요, 오프라인 티하우스 경험이 중요합니다.",
+    likelyNeeds: ["차 문화 대중화", "선물 수요", "오프라인 경험"],
+    notes: "프리미엄 F&B 브랜드 경험과 선물 시장 분석에 적합합니다."
+  },
+  {
+    id: "company-starbucks-korea",
+    name: "스타벅스코리아",
+    industry: "F&B/카페",
+    website: "https://www.starbucks.co.kr/",
+    description: "전국 카페 매장과 멤버십, 굿즈, 리워드 프로그램을 운영합니다.",
+    recentBusinessContext: "매장 경험, 리워드 멤버십, 굿즈 구매와 커뮤니티 문화가 중요합니다.",
+    likelyNeeds: ["멤버십 리워드", "매장 경험", "굿즈 구매 행동"],
+    notes: "카페 브랜드 리텐션과 굿즈 전략 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-mega-mgc-coffee",
+    name: "메가MGC커피",
+    industry: "F&B/카페",
+    size: "mid_sized_company",
+    website: "https://www.mega-mgccoffee.com/",
+    description: "가성비 커피와 대형 음료를 중심으로 성장한 카페 프랜차이즈입니다.",
+    recentBusinessContext: "저가 커피 경쟁, 매장 밀도, 메뉴 차별화와 브랜드 선호가 중요합니다.",
+    likelyNeeds: ["저가 커피 차별화", "메뉴 전략", "브랜드 선호"],
+    notes: "F&B 프랜차이즈 경쟁과 메뉴 포지셔닝 분석에 적합합니다."
+  },
+  {
+    id: "company-compose-coffee",
+    name: "컴포즈커피",
+    industry: "F&B/카페",
+    size: "mid_sized_company",
+    website: "https://composecoffee.com/",
+    description: "가성비 커피와 프랜차이즈 매장을 운영하는 카페 브랜드입니다.",
+    recentBusinessContext: "저가 커피 시장 경쟁, 가맹점 운영, 고객 재방문이 중요합니다.",
+    likelyNeeds: ["가성비 포지셔닝", "고객 재방문", "가맹점 경험"],
+    notes: "카페 프랜차이즈 고객 세분화와 재방문 전략에 적합합니다."
+  },
+  {
+    id: "company-bhc",
+    name: "BHC",
+    industry: "F&B/치킨",
+    website: "https://www.bhc.co.kr/",
+    description: "치킨 프랜차이즈 브랜드와 외식 매장을 운영합니다.",
+    recentBusinessContext: "배달 경쟁, 신메뉴 반응, 브랜드 충성도와 가격 민감도가 중요합니다.",
+    likelyNeeds: ["신메뉴 반응", "배달 채널 전략", "브랜드 충성도"],
+    notes: "치킨 프랜차이즈의 메뉴·채널 전략 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-bbq",
+    name: "BBQ",
+    industry: "F&B/치킨",
+    website: "https://www.bbq.co.kr/",
+    description: "치킨 프랜차이즈와 글로벌 외식 사업을 운영합니다.",
+    recentBusinessContext: "글로벌 K치킨 확장, 배달 채널, 브랜드 프리미엄화가 중요합니다.",
+    likelyNeeds: ["글로벌 K치킨", "배달 채널", "프리미엄 포지셔닝"],
+    notes: "외식 브랜드 글로벌화와 배달 경험 분석에 적합합니다."
+  },
+  {
+    id: "company-dominos-korea",
+    name: "도미노피자 코리아",
+    industry: "F&B/피자",
+    website: "https://web.dominos.co.kr/",
+    description: "피자 배달과 프랜차이즈 매장을 운영하는 글로벌 피자 브랜드입니다.",
+    recentBusinessContext: "배달 앱 경쟁, 자체 앱 활성화, 신메뉴 프로모션이 중요합니다.",
+    likelyNeeds: ["자체 앱 활성화", "신메뉴 프로모션", "배달 고객 리텐션"],
+    notes: "F&B 자체 앱과 배달 플랫폼 경쟁 분석에 적합합니다."
+  },
+  {
+    id: "company-hitejinro",
+    name: "하이트진로",
+    industry: "주류/F&B",
+    website: "https://www.hitejinro.com/",
+    description: "맥주와 소주 등 주류 브랜드를 운영하는 기업입니다.",
+    recentBusinessContext: "주류 브랜드 경험, MZ 음주 문화, 팝업과 굿즈 마케팅이 중요합니다.",
+    likelyNeeds: ["MZ 음주 문화", "브랜드 경험", "팝업/굿즈 전략"],
+    notes: "주류 브랜드 경험과 MZ 마케팅 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-ob-beer",
+    name: "오비맥주",
+    industry: "주류/F&B",
+    website: "https://www.ob.co.kr/",
+    description: "맥주 브랜드와 주류 마케팅을 운영하는 기업입니다.",
+    recentBusinessContext: "맥주 브랜드 선택, 저도주·무알콜 트렌드, 오프라인 이벤트가 중요합니다.",
+    likelyNeeds: ["맥주 브랜드 선택", "무알콜 트렌드", "오프라인 이벤트"],
+    notes: "주류 소비 트렌드와 브랜드 캠페인 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-korea-seven",
+    name: "세븐일레븐 코리아",
+    industry: "편의점/리테일",
+    website: "https://www.7-eleven.co.kr/",
+    description: "편의점 매장과 자체 상품, 생활 서비스를 운영합니다.",
+    recentBusinessContext: "편의점 PB 경쟁, 앱 멤버십, 야간·근거리 소비가 중요합니다.",
+    likelyNeeds: ["PB 상품 전략", "앱 멤버십", "근거리 소비"],
+    notes: "편의점 상품 기획과 고객 리텐션 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-cu",
+    name: "CU",
+    industry: "편의점/리테일",
+    website: "https://cu.bgfretail.com/",
+    description: "전국 편의점 네트워크와 PB 상품, 멤버십 서비스를 운영합니다.",
+    recentBusinessContext: "편의점 PB, 글로벌 점포, 앱 서비스와 고객 생활 접점이 중요합니다.",
+    likelyNeeds: ["PB 상품", "앱 서비스", "생활 접점"],
+    notes: "편의점 앱과 PB 상품 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-daiso",
+    name: "다이소",
+    industry: "생활용품/리테일",
+    website: "https://www.daiso.co.kr/",
+    description: "생활용품과 균일가 상품을 판매하는 리테일 브랜드입니다.",
+    recentBusinessContext: "가성비 소비, 카테고리 확장, 매장 탐색 경험이 중요합니다.",
+    likelyNeeds: ["가성비 소비", "카테고리 확장", "매장 탐색 경험"],
+    notes: "생활용품 소비자 행동과 매장 경험 개선 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-hanssem",
+    name: "한샘",
+    industry: "가구/인테리어",
+    website: "https://www.hanssem.com/",
+    description: "가구, 인테리어, 리모델링 서비스를 제공하는 리빙 기업입니다.",
+    recentBusinessContext: "주거 리모델링 수요, 온라인 상담, 라이프스타일 제안이 중요합니다.",
+    likelyNeeds: ["리모델링 수요", "온라인 상담 경험", "라이프스타일 제안"],
+    notes: "주거·리빙 고객 여정과 상담 경험 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-casamia",
+    name: "까사미아",
+    industry: "가구/리빙",
+    website: "https://www.guud.com/",
+    description: "가구와 홈퍼니싱 상품을 제공하는 리빙 브랜드입니다.",
+    recentBusinessContext: "프리미엄 리빙, 신혼·1인 가구, 온라인 구매 경험이 중요합니다.",
+    likelyNeeds: ["프리미엄 리빙", "신혼/1인 가구", "온라인 구매 경험"],
+    notes: "리빙 브랜드 포지셔닝과 주거 세그먼트 분석에 적합합니다."
+  },
+  {
+    id: "company-tmap-mobility",
+    name: "티맵모빌리티",
+    industry: "모빌리티/내비게이션",
+    size: "mid_sized_company",
+    website: "https://www.tmapmobility.com/",
+    description: "내비게이션, 대리, 주차, 모빌리티 데이터 서비스를 운영합니다.",
+    recentBusinessContext: "운전자 데이터 활용, 이동 서비스 확장, B2B 모빌리티 솔루션이 중요합니다.",
+    likelyNeeds: ["운전자 데이터", "이동 서비스 확장", "B2B 모빌리티"],
+    notes: "모빌리티 데이터 기반 서비스 기획 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-green-car",
+    name: "그린카",
+    industry: "모빌리티/카셰어링",
+    size: "mid_sized_company",
+    website: "https://www.greencar.co.kr/",
+    description: "카셰어링 서비스를 제공하는 모빌리티 플랫폼입니다.",
+    recentBusinessContext: "카셰어링 선택 기준, 차량 이용 신뢰, 프로모션 효율이 중요합니다.",
+    likelyNeeds: ["카셰어링 선택 기준", "차량 이용 신뢰", "프로모션 효율"],
+    notes: "카셰어링 시장의 고객 경험과 차별화 전략에 적합합니다."
+  },
+  {
+    id: "company-lotte-rental",
+    name: "롯데렌탈",
+    industry: "모빌리티/렌탈",
+    website: "https://www.lotterental.com/",
+    description: "렌터카, 차량 구독, 산업재 렌탈 서비스를 운영합니다.",
+    recentBusinessContext: "차량 구독, 장기렌트, 법인 고객 관리와 디지털 전환이 중요합니다.",
+    likelyNeeds: ["차량 구독", "장기렌트 고객", "법인 고객 관리"],
+    notes: "렌탈 서비스의 고객 세분화와 구독형 모빌리티 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-airbnb-korea",
+    name: "Airbnb Korea",
+    industry: "여행/숙박 플랫폼",
+    website: "https://www.airbnb.co.kr/",
+    description: "숙소와 체험을 연결하는 글로벌 여행 플랫폼입니다.",
+    recentBusinessContext: "로컬 여행, 장기 숙박, 호스트 신뢰와 지역 경험이 중요합니다.",
+    likelyNeeds: ["로컬 여행 경험", "호스트 신뢰", "장기 숙박 수요"],
+    notes: "여행 플랫폼의 지역 경험과 신뢰 형성 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-tripbtoz",
+    name: "트립비토즈",
+    industry: "여행/콘텐츠 커머스",
+    size: "startup",
+    website: "https://www.tripbtoz.com/",
+    description: "여행 영상 콘텐츠와 숙박 예약을 연결하는 플랫폼입니다.",
+    recentBusinessContext: "콘텐츠 기반 예약 전환, 여행 영상 소비, Z세대 여행 탐색이 중요합니다.",
+    likelyNeeds: ["콘텐츠 예약 전환", "Z세대 여행 탐색", "영상 커머스"],
+    notes: "콘텐츠 커머스형 여행 서비스 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-creatrip",
+    name: "크리에이트립",
+    industry: "여행/인바운드 플랫폼",
+    size: "mid_sized_company",
+    website: "https://www.creatrip.com/",
+    description: "외국인 관광객 대상 한국 여행 정보와 예약 서비스를 제공합니다.",
+    recentBusinessContext: "인바운드 관광 회복, K컬처 기반 여행, 외국인 고객 여정이 중요합니다.",
+    likelyNeeds: ["인바운드 관광", "K컬처 여행", "외국인 고객 여정"],
+    notes: "외국인 관광객 리서치와 K컬처 여행 상품 전략에 적합합니다."
+  },
+  {
+    id: "company-doctornow",
+    name: "닥터나우",
+    industry: "헬스케어/디지털헬스",
+    size: "mid_sized_company",
+    website: "https://www.doctornow.co.kr/",
+    description: "비대면 진료와 건강 관련 서비스를 제공하는 디지털 헬스케어 플랫폼입니다.",
+    recentBusinessContext: "비대면 진료 규제, 사용자 신뢰, 건강 서비스 확장이 중요합니다.",
+    likelyNeeds: ["비대면 진료 신뢰", "건강 서비스 확장", "규제 환경 대응"],
+    notes: "디지털 헬스케어 고객 수용성과 신뢰 형성 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-goodoc",
+    name: "굿닥",
+    industry: "헬스케어/의료 플랫폼",
+    size: "mid_sized_company",
+    website: "https://www.goodoc.co.kr/",
+    description: "병원 찾기, 예약, 건강 정보를 제공하는 의료 플랫폼입니다.",
+    recentBusinessContext: "병원 탐색 신뢰, 예약 전환, 의료 정보 접근성이 중요합니다.",
+    likelyNeeds: ["병원 탐색 신뢰", "예약 전환", "의료 정보 접근성"],
+    notes: "의료 플랫폼 UX와 병원 선택 기준 분석에 적합합니다."
+  },
+  {
+    id: "company-huraypositive",
+    name: "휴레이포지티브",
+    industry: "헬스케어/디지털헬스",
+    size: "SME",
+    website: "https://www.huray.net/",
+    description: "디지털 헬스케어와 만성질환 관리 솔루션을 제공하는 기업입니다.",
+    recentBusinessContext: "디지털 치료·관리 서비스 수용성, B2B 헬스케어 도입이 중요합니다.",
+    likelyNeeds: ["만성질환 관리", "B2B 헬스케어", "사용자 수용성"],
+    notes: "헬스케어 서비스 도입 장벽과 사용자 리서치 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-deepbio",
+    name: "딥바이오",
+    industry: "AI/헬스케어",
+    size: "SME",
+    website: "https://www.deepbio.co.kr/",
+    description: "병리 진단 AI 솔루션을 개발하는 헬스케어 AI 기업입니다.",
+    recentBusinessContext: "의료 AI 신뢰, 병원 도입 과정, 글로벌 규제와 세일즈가 중요합니다.",
+    likelyNeeds: ["의료 AI 신뢰", "병원 도입", "글로벌 세일즈"],
+    notes: "의료 AI 시장 진입과 이해관계자 설득 전략에 적합합니다."
+  },
+  {
+    id: "company-upstage",
+    name: "업스테이지",
+    industry: "AI/SaaS",
+    size: "mid_sized_company",
+    website: "https://www.upstage.ai/",
+    description: "LLM, 문서 AI, OCR 등 기업용 AI 솔루션을 개발합니다.",
+    recentBusinessContext: "기업 AI 도입, 문서 자동화, 산업별 AI 활용 사례 확보가 중요합니다.",
+    likelyNeeds: ["기업 AI 도입", "문서 자동화", "산업별 활용 사례"],
+    notes: "B2B AI 솔루션의 고객 문제 정의와 유스케이스 발굴에 적합합니다."
+  },
+  {
+    id: "company-wrtn",
+    name: "뤼튼",
+    industry: "AI/생성형AI",
+    size: "startup",
+    website: "https://wrtn.ai/",
+    description: "생성형 AI 기반 생산성·콘텐츠 서비스를 제공하는 기업입니다.",
+    recentBusinessContext: "AI 서비스 일상화, 생산성 사용 습관, 무료/유료 전환이 중요합니다.",
+    likelyNeeds: ["AI 사용 습관", "생산성 서비스 전환", "유료화 전략"],
+    notes: "생성형 AI 서비스의 학생·직장인 사용 맥락 분석에 적합합니다."
+  },
+  {
+    id: "company-scatterlab",
+    name: "스캐터랩",
+    industry: "AI/대화형 서비스",
+    size: "startup",
+    website: "https://scatterlab.co.kr/",
+    description: "대화형 AI와 캐릭터 기반 AI 서비스를 개발하는 기업입니다.",
+    recentBusinessContext: "AI 캐릭터 관계성, 대화 신뢰, 팬덤형 서비스 경험이 중요합니다.",
+    likelyNeeds: ["AI 캐릭터 경험", "대화 신뢰", "팬덤형 서비스"],
+    notes: "AI 대화 서비스의 사용자 몰입과 윤리적 신뢰 분석에 적합합니다."
+  },
+  {
+    id: "company-sendbird",
+    name: "센드버드",
+    industry: "B2B SaaS/커뮤니케이션",
+    size: "mid_sized_company",
+    website: "https://sendbird.com/",
+    description: "채팅, 음성, 영상, AI 고객 커뮤니케이션 솔루션을 제공하는 SaaS 기업입니다.",
+    recentBusinessContext: "글로벌 B2B 고객 확보, AI 고객 상담, 개발자 경험이 중요합니다.",
+    likelyNeeds: ["B2B 고객 확보", "AI 상담 유스케이스", "개발자 경험"],
+    notes: "B2B SaaS GTM과 고객 세그먼트 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-flex",
+    name: "플렉스",
+    industry: "HR/SaaS",
+    size: "SME",
+    website: "https://flex.team/",
+    description: "인사관리, 급여, 근태, 조직 운영을 지원하는 HR SaaS입니다.",
+    recentBusinessContext: "스타트업·중소기업 HR 디지털화, 조직문화 데이터 활용이 중요합니다.",
+    likelyNeeds: ["HR 디지털화", "조직문화 데이터", "B2B SaaS 도입"],
+    notes: "HR SaaS 도입 장벽과 고객 세그먼트 분석에 적합합니다."
+  },
+  {
+    id: "company-grepp",
+    name: "그렙",
+    industry: "HR/교육테크",
+    size: "SME",
+    website: "https://grepp.co/",
+    description: "개발자 평가, 교육, 채용 솔루션을 제공하는 HR·교육테크 기업입니다.",
+    recentBusinessContext: "개발자 역량 평가, 채용 효율, 교육-채용 연결이 중요합니다.",
+    likelyNeeds: ["개발자 역량 평가", "채용 효율", "교육-채용 연결"],
+    notes: "채용 평가와 교육 프로그램 개선 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-programmers",
+    name: "프로그래머스",
+    industry: "교육/개발자 플랫폼",
+    size: "SME",
+    website: "https://programmers.co.kr/",
+    description: "개발자 코딩 테스트, 교육, 채용 플랫폼을 제공합니다.",
+    recentBusinessContext: "개발자 학습 여정, 코딩 테스트 신뢰, 기업 채용 수요가 중요합니다.",
+    likelyNeeds: ["개발자 학습 여정", "코딩 테스트 신뢰", "채용 수요"],
+    notes: "개발자 교육과 채용 플랫폼 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-elice",
+    name: "엘리스",
+    industry: "교육/에듀테크",
+    size: "mid_sized_company",
+    website: "https://elice.io/",
+    description: "AI·코딩 교육 플랫폼과 기업 교육 솔루션을 제공합니다.",
+    recentBusinessContext: "AI 교육 수요, 기업 리스킬링, 학습 데이터 기반 성과 관리가 중요합니다.",
+    likelyNeeds: ["AI 교육 수요", "기업 리스킬링", "학습 성과 관리"],
+    notes: "교육 플랫폼의 기업 고객 가치와 학습 경험 개선 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-mathpresso",
+    name: "매스프레소",
+    industry: "교육/AI",
+    size: "mid_sized_company",
+    website: "https://www.mathpresso.com/",
+    description: "AI 기반 학습 플랫폼과 수학 문제 풀이 서비스를 운영합니다.",
+    recentBusinessContext: "AI 튜터링, 학습 지속성, 글로벌 교육 시장 확장이 중요합니다.",
+    likelyNeeds: ["AI 튜터링", "학습 지속성", "글로벌 교육 시장"],
+    notes: "AI 에듀테크의 학습자 리텐션과 글로벌 전략 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-miricanvas",
+    name: "미리캔버스",
+    industry: "디자인/SaaS",
+    size: "mid_sized_company",
+    website: "https://www.miricanvas.com/",
+    description: "온라인 디자인 제작 도구와 템플릿 기반 콘텐츠 제작 서비스를 제공합니다.",
+    recentBusinessContext: "AI 디자인 도구 경쟁, SMB·교육 고객, 템플릿 기반 생산성이 중요합니다.",
+    likelyNeeds: ["AI 디자인 도구", "SMB 고객", "템플릿 생산성"],
+    notes: "디자인 SaaS의 고객 세그먼트와 AI 기능 포지셔닝 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-mangoplate",
+    name: "망고플레이트",
+    industry: "푸드/리뷰 플랫폼",
+    size: "mid_sized_company",
+    website: "https://www.mangoplate.com/",
+    description: "맛집 정보와 리뷰를 제공하는 음식 추천 플랫폼입니다.",
+    recentBusinessContext: "리뷰 신뢰, 맛집 탐색, 커뮤니티 기반 추천 경험이 중요합니다.",
+    likelyNeeds: ["리뷰 신뢰", "맛집 탐색", "커뮤니티 추천"],
+    notes: "리뷰 플랫폼 신뢰와 음식 탐색 경험 분석에 적합합니다."
+  },
+  {
+    id: "company-catchtable",
+    name: "캐치테이블",
+    industry: "외식/예약 플랫폼",
+    size: "mid_sized_company",
+    website: "https://www.catchtable.co.kr/",
+    description: "레스토랑 예약, 웨이팅, 미식 경험을 연결하는 외식 플랫폼입니다.",
+    recentBusinessContext: "프리미엄 외식 예약, 노쇼 관리, 레스토랑 CRM이 중요합니다.",
+    likelyNeeds: ["프리미엄 외식 예약", "노쇼 관리", "레스토랑 CRM"],
+    notes: "외식 예약 플랫폼의 고객 경험과 B2B 가치 제안에 적합합니다."
+  },
+  {
+    id: "company-tabling",
+    name: "테이블링",
+    industry: "외식/웨이팅 플랫폼",
+    size: "mid_sized_company",
+    website: "https://www.tabling.co.kr/",
+    description: "외식 매장 웨이팅과 예약 서비스를 제공하는 플랫폼입니다.",
+    recentBusinessContext: "웨이팅 경험, 매장 회전율, 방문 전환과 고객 불만 관리가 중요합니다.",
+    likelyNeeds: ["웨이팅 경험", "매장 회전율", "방문 전환"],
+    notes: "외식 매장 운영과 고객 대기 경험 개선 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-lotte-world",
+    name: "롯데월드",
+    industry: "레저/테마파크",
+    website: "https://adventure.lotteworld.com/",
+    description: "테마파크, 아쿠아리움, 전망대 등 레저 공간을 운영합니다.",
+    recentBusinessContext: "방문객 경험, 대기 시간, 시즌 이벤트와 굿즈 전략이 중요합니다.",
+    likelyNeeds: ["방문객 경험", "대기 시간", "시즌 이벤트"],
+    notes: "레저 공간 경험 설계와 이벤트 마케팅 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-everland",
+    name: "에버랜드",
+    industry: "레저/테마파크",
+    website: "https://www.everland.com/",
+    description: "테마파크와 리조트, 동물원, 시즌 이벤트를 운영하는 레저 브랜드입니다.",
+    recentBusinessContext: "가족·MZ 방문 동기, 시즌 콘텐츠, 대기 경험과 앱 활용이 중요합니다.",
+    likelyNeeds: ["방문 동기", "시즌 콘텐츠", "앱 활용"],
+    notes: "테마파크 고객 여정과 시즌 이벤트 전략에 적합합니다."
+  },
+  {
+    id: "company-museum-san",
+    name: "뮤지엄 산",
+    industry: "문화/전시",
+    size: "nonprofit",
+    website: "https://www.museumsan.org/",
+    description: "건축, 자연, 예술 경험을 결합한 미술관입니다.",
+    recentBusinessContext: "문화 공간 방문 경험, 지역 관광, 전시 콘텐츠 확산이 중요합니다.",
+    likelyNeeds: ["문화 공간 경험", "지역 관광", "전시 콘텐츠 확산"],
+    notes: "문화 공간의 방문객 경험과 콘텐츠 확산 전략 제안에 적합합니다."
+  },
+  {
+    id: "company-korea-tourism-organization",
+    name: "한국관광공사",
+    industry: "공공기관/관광",
+    size: "public_institution",
+    website: "https://knto.or.kr/",
+    description: "국내외 관광 진흥과 지역 관광 활성화 사업을 수행하는 공공기관입니다.",
+    recentBusinessContext: "인바운드 관광 회복, 지역 관광, K컬처 여행 콘텐츠가 중요합니다.",
+    likelyNeeds: ["인바운드 관광", "지역 관광 활성화", "K컬처 여행"],
+    possibleCollaborationTypes: ["market_research", "research_collaboration", "joint_event", "business_strategy_proposal"],
+    notes: "공공 관광 정책과 청년 관점 리서치 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-seoul-tourism-organization",
+    name: "서울관광재단",
+    industry: "공공기관/관광",
+    size: "public_institution",
+    website: "https://www.sto.or.kr/",
+    description: "서울 관광 마케팅과 MICE, 관광 콘텐츠 활성화를 지원하는 기관입니다.",
+    recentBusinessContext: "서울 관광 브랜딩, 외국인 관광객 경험, 로컬 콘텐츠 발굴이 중요합니다.",
+    likelyNeeds: ["서울 관광 브랜딩", "외국인 경험", "로컬 콘텐츠"],
+    possibleCollaborationTypes: ["market_research", "joint_event", "research_collaboration", "business_strategy_proposal"],
+    notes: "서울 관광 경험과 글로벌 방문객 리서치에 적합합니다."
+  },
+  {
+    id: "company-kotra-startup",
+    name: "서울경제진흥원",
+    industry: "공공기관/창업지원",
+    size: "public_institution",
+    website: "https://www.sba.seoul.kr/",
+    description: "서울시 중소기업, 스타트업, 콘텐츠, 산업 지원 사업을 수행하는 기관입니다.",
+    recentBusinessContext: "스타트업 지원, 청년 창업, 산업별 프로그램 성과 확산이 중요합니다.",
+    likelyNeeds: ["스타트업 지원", "청년 창업", "프로그램 성과 확산"],
+    possibleCollaborationTypes: ["research_collaboration", "joint_event", "sponsorship", "market_research"],
+    notes: "공공 창업지원과 청년 프로그램 분석 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-kosme",
+    name: "중소벤처기업진흥공단",
+    industry: "공공기관/중소기업지원",
+    size: "public_institution",
+    website: "https://www.kosmes.or.kr/",
+    description: "중소벤처기업의 성장, 금융, 수출, 인력 지원 사업을 수행하는 기관입니다.",
+    recentBusinessContext: "중소기업 디지털 전환, 수출 지원, 청년 인재 연결이 중요합니다.",
+    likelyNeeds: ["중소기업 지원", "디지털 전환", "청년 인재 연결"],
+    possibleCollaborationTypes: ["market_research", "research_collaboration", "joint_event", "business_strategy_proposal"],
+    notes: "중소기업 문제 발굴과 공공 지원 프로그램 개선 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-seoul-startup-hub",
+    name: "서울창업허브",
+    industry: "공공/창업지원",
+    size: "public_institution",
+    website: "https://startup-plus.kr/",
+    description: "서울시 스타트업 보육, 네트워킹, 오픈이노베이션 프로그램을 지원합니다.",
+    recentBusinessContext: "스타트업-대기업 협업, 초기기업 성장, 프로그램 참여자 경험이 중요합니다.",
+    likelyNeeds: ["오픈이노베이션", "초기기업 성장", "프로그램 경험"],
+    possibleCollaborationTypes: ["joint_event", "research_collaboration", "market_research", "sponsorship"],
+    notes: "창업 생태계 리서치와 오픈이노베이션 프로그램 개선에 적합합니다."
+  },
+  {
+    id: "company-impact-square",
+    name: "임팩트스퀘어",
+    industry: "ESG/소셜임팩트",
+    size: "SME",
+    website: "https://impactsquare.com/",
+    description: "소셜임팩트 전략, 평가, ESG 컨설팅을 수행하는 조직입니다.",
+    recentBusinessContext: "임팩트 측정, ESG 전략, 사회문제 해결형 비즈니스 모델이 중요합니다.",
+    likelyNeeds: ["임팩트 측정", "ESG 전략", "사회문제 비즈니스"],
+    possibleCollaborationTypes: ["research_collaboration", "market_research", "business_strategy_proposal", "joint_event"],
+    notes: "임팩트 리서치와 ESG 전략 제안 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-merryyear",
+    name: "MYSC",
+    industry: "ESG/임팩트투자",
+    size: "SME",
+    website: "https://mysc.co.kr/",
+    description: "소셜벤처 액셀러레이팅, 임팩트 투자, ESG 오픈이노베이션을 수행합니다.",
+    recentBusinessContext: "소셜벤처 성장, 임팩트 생태계, 대기업 ESG 협업이 중요합니다.",
+    likelyNeeds: ["소셜벤처 성장", "ESG 협업", "임팩트 생태계"],
+    possibleCollaborationTypes: ["research_collaboration", "joint_event", "business_strategy_proposal", "sponsorship"],
+    notes: "소셜벤처와 ESG 협업 모델 발굴 프로젝트에 적합합니다."
+  },
+  {
+    id: "company-treeplanet",
+    name: "트리플래닛",
+    industry: "ESG/환경",
+    size: "SME",
+    website: "https://treepla.net/",
+    description: "나무 심기, 숲 조성, 기업 ESG 캠페인을 수행하는 환경 기업입니다.",
+    recentBusinessContext: "기업 ESG 캠페인, 참여형 환경 활동, 임팩트 커뮤니케이션이 중요합니다.",
+    likelyNeeds: ["ESG 캠페인", "참여형 환경 활동", "임팩트 커뮤니케이션"],
+    possibleCollaborationTypes: ["joint_event", "sponsorship", "market_research", "business_strategy_proposal"],
+    notes: "청년 참여형 ESG 캠페인과 기업 협업 제안에 적합합니다."
+  },
+  {
+    id: "company-rebricks",
+    name: "리브릭스",
+    industry: "ESG/순환경제",
+    size: "startup",
+    website: "https://rebricks.co.kr/",
+    description: "폐자원 업사이클링과 지속가능 소재 활용 사업을 수행하는 기업입니다.",
+    recentBusinessContext: "순환경제 인식, 친환경 소재 수요, B2B 협업 사례 확보가 중요합니다.",
+    likelyNeeds: ["순환경제 인식", "친환경 소재 수요", "B2B 협업"],
+    possibleCollaborationTypes: ["market_research", "business_strategy_proposal", "joint_event", "research_collaboration"],
+    notes: "친환경 소재 시장 조사와 브랜드 협업 제안에 적합합니다."
+  }
+];
 
 export const companyPool: CompanyLead[] = [
   createCompany({
@@ -949,7 +2045,8 @@ export const companyPool: CompanyLead[] = [
     likelyNeeds: ["신규 팬 유입", "경기장 관람 경험", "리그 단위 팬 참여 프로그램"],
     possibleCollaborationTypes: ["business_strategy_proposal", "joint_event", "market_research", "sponsorship"],
     notes: "스포츠 관람을 경험형 엔터테인먼트로 재정의하는 제안에 적합합니다."
-  })
+  }),
+  ...expansionCompanySeeds.slice(0, 81).map(createCompany)
 ];
 
 function hashSeed(seed: string): number {
@@ -974,15 +2071,64 @@ function randomFromSeed(seed: number) {
 
 export function getCompaniesForSeed(seed: string, count = 30): CompanyLead[] {
   const random = randomFromSeed(hashSeed(seed));
-  return [...companyPool]
-    .map((company) => ({ company, sort: random() }))
-    .sort((a, b) => a.sort - b.sort)
-    .slice(0, Math.min(count, companyPool.length))
-    .map(({ company }) => company);
+  const targetCount = Math.min(count, companyPool.length);
+  const tierTargets = buildTierTargets(targetCount);
+  const picked = new Map<string, CompanyLead>();
+
+  for (const [tier, tierCount] of Object.entries(tierTargets)) {
+    selectDiscoveryCandidates(
+      companyPool.filter((company) => company.discovery?.valueTier === tier),
+      tierCount,
+      random
+    ).forEach((company) => picked.set(company.id, company));
+  }
+
+  if (picked.size < targetCount) {
+    selectDiscoveryCandidates(
+      companyPool.filter((company) => !picked.has(company.id)),
+      targetCount - picked.size,
+      random
+    ).forEach((company) => picked.set(company.id, company));
+  }
+
+  return Array.from(picked.values()).sort((a, b) => {
+    const tierDifference = tierSortRank(a) - tierSortRank(b);
+    if (tierDifference !== 0) return tierDifference;
+    return (b.discovery?.contactValueScore || 0) - (a.discovery?.contactValueScore || 0);
+  });
 }
 
 export const companyLeads: CompanyLead[] = getCompaniesForSeed("societybridge-default", 30);
 
 export function findCompanyById(id: string): CompanyLead | undefined {
   return companyPool.find((company) => company.id === id);
+}
+
+function buildTierTargets(count: number): Record<string, number> {
+  if (count <= 5) return { "Tier 1": Math.min(3, count), "Tier 2": Math.max(0, count - 3), "Tier 3": 0 };
+  if (count <= 10) return { "Tier 1": 4, "Tier 2": 4, "Tier 3": count - 8 };
+  return {
+    "Tier 1": Math.ceil(count * 0.36),
+    "Tier 2": Math.ceil(count * 0.4),
+    "Tier 3": count - Math.ceil(count * 0.36) - Math.ceil(count * 0.4)
+  };
+}
+
+function selectDiscoveryCandidates(companies: CompanyLead[], count: number, random: () => number) {
+  return companies
+    .map((company) => ({
+      company,
+      sort: (company.discovery?.contactValueScore || 0) + random() * 18
+    }))
+    .sort((a, b) => b.sort - a.sort)
+    .slice(0, Math.max(0, count))
+    .map(({ company }) => company);
+}
+
+function tierSortRank(company: CompanyLead) {
+  const tier = company.discovery?.valueTier;
+  if (tier === "Tier 1") return 1;
+  if (tier === "Tier 2") return 2;
+  if (tier === "Tier 3") return 3;
+  return 4;
 }

@@ -30,9 +30,16 @@ function EmailContent() {
   const [tone, setTone] = useState<EmailTone>("student_organization");
   const [length, setLength] = useState<EmailLength>("short_email");
   const [cta, setCta] = useState<EmailCta>("request_meeting");
+  const [recipientName, setRecipientName] = useState("");
   const [senderName, setSenderName] = useState("");
   const [senderRole, setSenderRole] = useState("");
-  const [optionalAttachmentMention, setOptionalAttachmentMention] = useState("소개자료를 함께 전달드릴 수 있습니다.");
+  const [senderEmail, setSenderEmail] = useState("");
+  const [senderPhone, setSenderPhone] = useState("");
+  const [projectPeriod, setProjectPeriod] = useState("");
+  const [societyOutreachIntro, setSocietyOutreachIntro] = useState("");
+  const [collaborationHistorySummary, setCollaborationHistorySummary] = useState("");
+  const [societyOutreachStrength, setSocietyOutreachStrength] = useState("");
+  const [optionalAttachmentMention, setOptionalAttachmentMention] = useState("");
   const [scoreContext, setScoreContext] = useState<CompanyScore | null>(null);
   const [output, setOutput] = useState<ColdEmailOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,8 +83,15 @@ function EmailContent() {
           tone,
           length,
           cta,
+          recipientName,
           senderName,
           senderRole,
+          senderEmail,
+          senderPhone,
+          projectPeriod,
+          societyOutreachIntro,
+          societyOutreachStrength,
+          collaborationHistorySummary,
           optionalAttachmentMention,
           scoreContext: scorePayload.data
         })
@@ -153,14 +167,50 @@ function EmailContent() {
                   {Object.entries(emailCtaLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </Field>
+              <Field label="수신자 이름">
+                <input value={recipientName} onChange={(event) => setRecipientName(event.target.value)} className="input" placeholder="예: OOO" />
+              </Field>
               <Field label="발신자 이름">
-                <input value={senderName} onChange={(event) => setSenderName(event.target.value)} className="input" placeholder="예: 신정빈" />
+                <input value={senderName} onChange={(event) => setSenderName(event.target.value)} className="input" placeholder="예: 공나영" />
               </Field>
               <Field label="발신자 역할">
-                <input value={senderRole} onChange={(event) => setSenderRole(event.target.value)} className="input" placeholder="예: 대외협력팀장" />
+                <input value={senderRole} onChange={(event) => setSenderRole(event.target.value)} className="input" placeholder="예: 회장 또는 대외협력팀장" />
+              </Field>
+              <Field label="발신자 이메일">
+                <input value={senderEmail} onChange={(event) => setSenderEmail(event.target.value)} className="input" placeholder="예: bit.yonsei@gmail.com" />
+              </Field>
+              <Field label="발신자 전화번호">
+                <input value={senderPhone} onChange={(event) => setSenderPhone(event.target.value)} className="input" placeholder="예: 010-0000-0000" />
+              </Field>
+              <Field label="예상 프로젝트 기간">
+                <input value={projectPeriod} onChange={(event) => setProjectPeriod(event.target.value)} className="input" placeholder="예: 202X년 N월~N월" />
+              </Field>
+              <Field label="학회 소개 문구">
+                <textarea
+                  value={societyOutreachIntro}
+                  onChange={(event) => setSocietyOutreachIntro(event.target.value)}
+                  className="input min-h-24"
+                  placeholder="예: BIT는 국내에서 ‘혁신’을 중심으로 경영 전략을 논의하는 대학 학회로, 시장과 트렌드를 읽고 새로운 비즈니스 기회를 실행 가능한 전략으로 연결할 수 있는 인재를 양성하는 것을 목표로 하고 있습니다."
+                />
+              </Field>
+              <Field label="기존 프로젝트/협업 경험 문구">
+                <textarea
+                  value={collaborationHistorySummary}
+                  onChange={(event) => setCollaborationHistorySummary(event.target.value)}
+                  className="input min-h-20"
+                  placeholder="예: 매 학기 기업과 함께 신규 서비스·사업모델 기획, 마케팅·제휴 전략 과제를 수행해왔으며, 자세한 설명은 첨부한 ‘학회 소개서’를 참고해 주시기 바랍니다."
+                />
+              </Field>
+              <Field label="학회 강점/제공 가치 문구">
+                <textarea
+                  value={societyOutreachStrength}
+                  onChange={(event) => setSocietyOutreachStrength(event.target.value)}
+                  className="input min-h-24"
+                  placeholder="예: 기업 내부 데이터만으로는 포착하기 어려운 2030 소비자의 실제 인식·비교·선택 맥락에 대한 데이터를 강점으로 가지고 있습니다."
+                />
               </Field>
               <Field label="첨부자료 언급">
-                <input value={optionalAttachmentMention} onChange={(event) => setOptionalAttachmentMention(event.target.value)} className="input" />
+                <input value={optionalAttachmentMention} onChange={(event) => setOptionalAttachmentMention(event.target.value)} className="input" placeholder="예: 학회 소개서와 프로젝트 개요서를 첨부드립니다." />
               </Field>
             </div>
 
@@ -188,11 +238,15 @@ function EmailContent() {
             {output ? (
               <div className="mt-4 space-y-4">
                 <OutputBlock title="이메일 제목 3개" content={output.subjectLines.join("\n")} />
+                <OutputBlock title="메시지 전략" content={output.messageStrategy} />
+                <OutputBlock title="1촌 신청 전 메시지" content={output.linkedinConnectionRequest} />
+                <OutputBlock title="1촌 수락 후 메시지" content={output.linkedinAcceptedMessage} />
                 <OutputBlock title="개인화 콜드 이메일" content={output.emailBody} />
                 <OutputBlock title="짧은 LinkedIn DM 버전" content={output.shortLinkedInDm} />
                 <OutputBlock title="후속 이메일" content={output.followUpEmailMessage} />
                 <OutputBlock title="한 문장 피치" content={output.oneSentencePitch} />
                 <OutputBlock title="추천 CTA 문장" content={output.suggestedCtaSentence} />
+                <ChecklistBlock items={output.qualityChecklist} />
               </div>
             ) : (
               <div className="mt-4 rounded-md bg-slate-50 p-6 text-sm leading-6 text-slate-600">
@@ -220,6 +274,26 @@ function OutputBlock({ title, content }: { title: string; content: string }) {
         </button>
       </div>
       <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{content}</p>
+    </div>
+  );
+}
+
+function ChecklistBlock({ items }: { items: string[] }) {
+  const content = items.map((item) => `- ${item}`).join("\n");
+
+  return (
+    <div className="rounded-md border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-bold text-slate-950">품질 체크리스트</p>
+        <button type="button" onClick={() => navigator.clipboard.writeText(content)} className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-800">
+          <Clipboard size={13} />복사
+        </button>
+      </div>
+      <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-700">
+        {items.map((item) => (
+          <li key={item} className="rounded-md bg-slate-50 px-3 py-2">{item}</li>
+        ))}
+      </ul>
     </div>
   );
 }

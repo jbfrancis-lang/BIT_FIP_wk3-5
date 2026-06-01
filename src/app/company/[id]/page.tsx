@@ -7,17 +7,15 @@ import { BookmarkPlus, ExternalLink, FileText, MailPlus, Users } from "lucide-re
 
 import { DashboardShell } from "@/components/DashboardShell";
 import { Badge, EmptyState, ErrorBox, FitScore, LoadingState, PageHeader } from "@/components/ui";
+import { buildRecipientFit, contactAvailability, routeTypeLabel, sourceLinkLabel } from "@/lib/contactRoutes";
 import { collaborationTypeLabels, companySizeLabels } from "@/lib/labels";
 import { findCompanyById } from "@/lib/mockData";
 import { readSavedCompanies, readSocietyState, writeSavedCompanies } from "@/lib/storage";
-import type { CompanyLead, CompanyScore, ContactRoute, EnvironmentAnalysis, SavedCompany, SocietyAnalysis, SocietyProfileInput } from "@/lib/types";
-
-const publicEmailFallback = "검증된 공개 이메일이 없습니다. 공식 문의 페이지 또는 제휴/파트너십 문의 채널을 이용하세요.";
+import type { CompanyLead, CompanyScore, EnvironmentAnalysis, RecipientFit, SavedCompany, SocietyAnalysis, SocietyProfileInput } from "@/lib/types";
 
 export default function CompanyDetailPage() {
   const params = useParams<{ id: string }>();
   const company = useMemo(() => findCompanyById(params.id), [params.id]);
-  const contactRoutes = useMemo(() => (company ? contactRoutesFor(company) : []), [company]);
   const [society, setSociety] = useState<SocietyProfileInput | null>(null);
   const [analysis, setAnalysis] = useState<SocietyAnalysis | null>(null);
   const [environmentAnalysis, setEnvironmentAnalysis] = useState<EnvironmentAnalysis | null>(null);
@@ -88,6 +86,8 @@ export default function CompanyDetailPage() {
     );
   }
 
+  const recipientFit = buildRecipientFit(company, score);
+
   return (
     <DashboardShell>
       <PageHeader
@@ -112,7 +112,7 @@ export default function CompanyDetailPage() {
       {!society || !analysis ? (
         <div className="space-y-4">
           <EmptyState title="먼저 학회 분석이 필요합니다" description="학회 프로필 화면에서 정보를 입력하면 기업 적합도 분석까지 볼 수 있습니다. 연락 채널은 아래에서 먼저 확인할 수 있습니다." />
-          <ContactSection company={company} score={score} contactRoutes={contactRoutes} />
+          <ContactSection company={company} score={score} recipientFit={recipientFit} />
         </div>
       ) : (
         <div className="space-y-4">
@@ -151,25 +151,29 @@ export default function CompanyDetailPage() {
             <DetailBlock title="기업이 관심 가질 이유" value="내부 데이터만으로 보기 어려운 학생·청년 관점과 외부 관찰 기반 실행 아이디어를 얻을 수 있기 때문입니다." />
             <DetailBlock title="우려 또는 리스크" value={(score?.risks || []).join(" ")} />
             <DetailBlock title="추천 접촉 부서" value={company.suggestedDepartment} />
+            <DetailBlock title="1순위 수신자" value={`${recipientFit.primaryDepartment} · ${recipientFit.recommendedRecipientTitle}`} />
+            <DetailBlock title="담당자 접근 추천" value={`담당자 적합도는 ${fitLevel(recipientFit.criteria.overall)} 수준입니다. ${recipientFit.primaryDepartment}의 ${recipientFit.recommendedRecipientTitle}에게 먼저 접근하고, 필요 시 ${recipientFit.alternativeDepartments.slice(0, 2).join(", ") || "전략/사업개발 관련 부서"}로 확장하는 것을 추천드립니다.`} />
+            <DetailBlock title="수신자 추천 근거" value={recipientFit.reasoning} />
             <DetailBlock title="적합도 근거" value={score?.fitReasoning || "분석 대기 중입니다."} />
             <DetailBlock title="협업 유형 Fit" value={score?.collaborationTypeFit || company.possibleCollaborationTypes.map((type) => collaborationTypeLabels[type]).join(", ")} />
           </section>
 
-          <ContactSection company={company} score={score} contactRoutes={contactRoutes} />
+          <ContactSection company={company} score={score} recipientFit={recipientFit} />
         </div>
       )}
     </DashboardShell>
   );
 }
 
-function ContactSection({ company, score, contactRoutes }: { company: CompanyLead; score: CompanyScore | null; contactRoutes: ContactRoute[] }) {
+function ContactSection({ company, score, recipientFit }: { company: CompanyLead; score: CompanyScore | null; recipientFit: RecipientFit }) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-950">연락 채널과 출처 링크</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">{contactAvailability(company, score?.contactAvailability)}</p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">추천 접촉 부서: {company.suggestedDepartment}</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">추천 접촉 부서: {recipientFit.primaryDepartment}</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">권장 수신자: {recipientFit.recommendedRecipientTitle}</p>
         </div>
         {company.contact.publicEmail ? (
           <a className="contact-link" href={`mailto:${company.contact.publicEmail}`}>
@@ -178,8 +182,38 @@ function ContactSection({ company, score, contactRoutes }: { company: CompanyLea
         ) : null}
       </div>
 
+      <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-md bg-cyan-50 p-4">
+          <p className="text-sm font-bold text-cyan-950">AI 추천 요약</p>
+          <p className="mt-2 text-sm leading-6 text-cyan-950">{recipientFit.firstAction}</p>
+          {recipientFit.alternativeDepartments.length ? (
+            <p className="mt-2 text-xs leading-5 text-cyan-900">대체 부서: {recipientFit.alternativeDepartments.join(", ")}</p>
+          ) : null}
+          {recipientFit.noPublicEmailNotice ? <p className="mt-2 text-xs font-semibold text-cyan-900">{recipientFit.noPublicEmailNotice}</p> : null}
+          <div className="mt-4 rounded-md bg-white/70 p-3">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-900">사용자가 해야 할 일</p>
+            <ol className="mt-2 space-y-2 text-sm leading-6 text-cyan-950">
+              {recipientFit.userActionChecklist.map((action) => (
+                <li key={action} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-700" />
+                  <span>{action}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <ContactMetric label="종합" value={fitLevel(recipientFit.criteria.overall)} />
+          <ContactMetric label="의사결정권" value={fitLevel(recipientFit.criteria.decisionAuthority)} />
+          <ContactMetric label="실무 연관성" value={fitLevel(recipientFit.criteria.executionRelevance)} />
+          <ContactMetric label="외부협업" value={fitLevel(recipientFit.criteria.externalCollaborationLikelihood)} />
+          <ContactMetric label="공개 연락" value={fitLevel(recipientFit.criteria.publicContactability)} />
+          <ContactMetric label="경유 가능성" value={fitLevel(recipientFit.criteria.warmIntroPotential)} />
+        </div>
+      </div>
+
       <div className="mt-4 grid gap-3 md:grid-cols-2">
-        {contactRoutes.map((route) => (
+        {recipientFit.contactRoutePriority.map(({ route, rank, reason }) => (
           <a
             key={`${route.label}-${route.url}`}
             href={route.url}
@@ -190,12 +224,14 @@ function ContactSection({ company, score, contactRoutes }: { company: CompanyLea
             <div className="flex items-center justify-between gap-3">
               <p className="inline-flex items-center gap-2 text-sm font-bold text-slate-950">
                 {route.type === "linkedin_people_search" ? <Users size={15} /> : null}
-                {route.label}
+                {rank}순위 {route.label}
               </p>
               <ExternalLink size={14} className="shrink-0 text-slate-500" />
             </div>
             <p className="mt-1 text-xs font-semibold text-cyan-800">{routeTypeLabel(route)}</p>
-            {route.description ? <p className="mt-2 text-sm leading-6 text-slate-600">{route.description}</p> : null}
+            <p className="mt-2 text-sm leading-6 text-slate-600">{reason}</p>
+            <p className="mt-2 text-xs font-semibold text-slate-500">사용자 확인: 링크를 열어 담당 부서, 현재 재직 여부, 공식 문의 가능 여부를 직접 확인하세요.</p>
+            {route.description ? <p className="mt-1 text-xs leading-5 text-slate-500">{route.description}</p> : null}
           </a>
         ))}
       </div>
@@ -214,64 +250,10 @@ function ContactSection({ company, score, contactRoutes }: { company: CompanyLea
   );
 }
 
-function contactRoutesFor(company: CompanyLead): ContactRoute[] {
-  if (company.contact.routes?.length) return company.contact.routes;
-  const routes: ContactRoute[] = [];
-  if (company.contact.contactPage) {
-    routes.push({
-      type: "official_contact",
-      label: "공식 문의 페이지",
-      url: company.contact.contactPage,
-      description: "공식 사이트에서 확인 가능한 공개 문의 접점입니다."
-    });
-  }
-  if (company.contact.linkedinUrl) {
-    routes.push({
-      type: "linkedin_company",
-      label: "LinkedIn 회사 페이지",
-      url: company.contact.linkedinUrl,
-      description: "회사 공개 페이지에서 담당 부서와 공개 게시글을 확인합니다."
-    });
-  }
-  return routes;
-}
-
-function contactAvailability(company: CompanyLead, scoreAvailability?: string) {
-  if (company.contact.publicEmail) {
-    return `공개 이메일 ${company.contact.publicEmail} 사용 가능`;
-  }
-  if (!scoreAvailability || scoreAvailability.includes("No verified public email")) {
-    return publicEmailFallback;
-  }
-  return scoreAvailability;
-}
-
-function routeTypeLabel(route: ContactRoute) {
-  const labels: Record<ContactRoute["type"], string> = {
-    official_contact: "공식 문의",
-    customer_support: "고객센터",
-    partnership: "제휴/파트너십",
-    business_development: "사업개발",
-    strategy: "전략/기획",
-    marketing: "마케팅",
-    hr_recruiting: "HR/채용",
-    pr_media: "PR/미디어",
-    linkedin_company: "LinkedIn 회사",
-    linkedin_people_search: "LinkedIn 재직자 탭",
-    careers: "채용 페이지",
-    other: "기타 공개 접점"
-  };
-  return labels[route.type];
-}
-
-function sourceLinkLabel(link: string) {
-  try {
-    const hostname = new URL(link).hostname.replace(/^www\./, "");
-    if (hostname.includes("linkedin.com")) return "LinkedIn";
-    return hostname;
-  } catch {
-    return "출처";
-  }
+function fitLevel(score: number) {
+  if (score >= 78) return "높음";
+  if (score >= 62) return "보통";
+  return "확인 필요";
 }
 
 function DetailBlock({ title, value }: { title: string; value: string }) {
@@ -279,6 +261,15 @@ function DetailBlock({ title, value }: { title: string; value: string }) {
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-sm font-bold text-slate-950">{title}</p>
       <p className="mt-2 text-sm leading-6 text-slate-600">{value}</p>
+    </div>
+  );
+}
+
+function ContactMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+      <p className="font-semibold text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
     </div>
   );
 }

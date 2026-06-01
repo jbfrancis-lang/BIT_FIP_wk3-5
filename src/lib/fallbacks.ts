@@ -1,4 +1,6 @@
 import { collaborationTypeLabels } from "@/lib/labels";
+import { evaluateCompanyDiscovery, getCompanyValueTier } from "@/lib/industryAcademic";
+import { buildLinkedInOutreachMessages } from "@/lib/outreachTemplates";
 import type {
   ColdEmailOutput,
   ColdEmailRequest,
@@ -38,86 +40,6 @@ function stableNumber(value: string): number {
     hash = Math.imul(hash, 31) + value.charCodeAt(index);
   }
   return Math.abs(hash);
-}
-
-const tierOneCompanyIds = new Set([
-  "company-google",
-  "company-samsung-electronics",
-  "company-naver",
-  "company-kakao",
-  "company-sk-telecom",
-  "company-kt",
-  "company-hyundai-mobis",
-  "company-lg-hnh",
-  "company-amorepacific",
-  "company-toss",
-  "company-musinsa",
-  "company-woowa-brothers",
-  "company-hana-bank",
-  "company-lotte",
-  "company-sony",
-  "company-hp",
-  "company-dell",
-  "company-gs-caltex",
-  "company-nongshim",
-  "company-krafton",
-  "company-naver-webtoon",
-  "company-olive-young",
-  "company-gs25",
-  "company-paris-baguette",
-  "company-kotra"
-]);
-
-const tierTwoCompanyIds = new Set([
-  "company-kakao-mobility",
-  "company-socar",
-  "company-kream",
-  "company-todayhouse",
-  "company-daangn",
-  "company-yanolja",
-  "company-kurly",
-  "company-ridi",
-  "company-gangnam-unni",
-  "company-lunit",
-  "company-wantedlab",
-  "company-channel-talk",
-  "company-myrealtrip",
-  "company-sandbox",
-  "company-pubg",
-  "company-devsisters",
-  "company-photoism",
-  "company-kyobo",
-  "company-ace-bed",
-  "company-emart24",
-  "company-jejuair",
-  "company-29cm",
-  "company-yogiyo",
-  "company-class101",
-  "company-tridge",
-  "company-laundrygo",
-  "company-spoon",
-  "company-pozalabs"
-]);
-
-function companyValueTier(company: CompanyLead) {
-  if (tierOneCompanyIds.has(company.id)) {
-    return {
-      tier: "Tier 1",
-      reason: "전국적 또는 글로벌 인지도가 높고, 협업 성사 시 학회 포트폴리오와 대외 신뢰도에 주는 레퍼런스 가치가 큰 네임드 기업입니다."
-    };
-  }
-
-  if (tierTwoCompanyIds.has(company.id) || company.size === "large_enterprise" || company.size === "mid_sized_company") {
-    return {
-      tier: "Tier 2",
-      reason: "특정 산업이나 2030 고객 접점에서 인지도가 높고, 협업 사례로 활용했을 때 충분한 신뢰도와 설명력이 있는 기업입니다."
-    };
-  }
-
-  return {
-    tier: "Tier 3",
-    reason: "브랜드 파급력은 상대적으로 제한적이지만, 문제 상황이 명확하면 대량 아웃리치나 파일럿 협업 후보로 검토할 수 있는 기업입니다."
-  };
 }
 
 export function fallbackAnalyzeSociety(input: SocietyProfileInput): SocietyAnalysis {
@@ -186,9 +108,10 @@ export function fallbackAnalyzeEnvironment(input: SocietyProfileInput, analysis:
 export function fallbackScoreCompany(input: SocietyProfileInput, analysis: SocietyAnalysis, company: CompanyLead, environmentAnalysis?: EnvironmentAnalysis | null): CompanyScore {
   const industries = splitList(input.industriesOfInterest);
   const capabilities = analysis.core_capabilities;
+  const discovery = company.discovery || evaluateCompanyDiscovery(company);
   const collaborationMatch = company.possibleCollaborationTypes.includes(input.preferredCollaborationType) ? 14 : 5;
   const industryMatch = company.industry.includes(input.industriesOfInterest) ? 10 : overlapScore(industries, [company.industry, ...company.likelyNeeds]) * 6;
-  const contactBonus = company.contact.publicEmail || company.contact.contactPage ? 8 : 3;
+  const contactBonus = Math.round(discovery.contactabilityScore / 14);
   const problemKeywords = environmentAnalysis?.problem_keywords_for_company_search || [];
   const problemMatch = overlapScore(problemKeywords, [company.industry, company.recentBusinessContext, ...company.likelyNeeds]) * 3;
   const companyText = `${company.name} ${company.industry} ${company.description} ${company.recentBusinessContext} ${company.likelyNeeds.join(" ")} ${company.notes}`;
@@ -208,15 +131,16 @@ export function fallbackScoreCompany(input: SocietyProfileInput, analysis: Socie
   ].reduce((total, keyword) => total + (companyText.includes(keyword) ? 2 : 0), 0);
   const sizeScore = company.size === "large_enterprise" ? 4 : company.size === "mid_sized_company" ? 3 : company.size === "public_institution" ? 2 : 0;
   const historySignal = company.notes.includes("사례") || company.notes.includes("산학협력") ? 5 : 0;
+  const discoverySignal = Math.round((discovery.collaborationPotentialScore + discovery.problemOpportunityScore + discovery.contactValueScore) / 30);
   const spread = (stableNumber(company.id) % 23) - 11;
   const score = Math.max(
     52,
     Math.min(
       97,
-      36 + collaborationMatch + industryMatch + contactBonus + Math.min(capabilities.length, 5) * 2 + problemMatch + Math.min(strategicNeedScore, 16) + sizeScore + historySignal + spread
+      32 + collaborationMatch + industryMatch + contactBonus + Math.min(capabilities.length, 5) * 2 + problemMatch + Math.min(strategicNeedScore, 16) + sizeScore + historySignal + discoverySignal + spread
     )
   );
-  const valueTier = companyValueTier(company);
+  const valueTier = getCompanyValueTier(company);
   const priorityTier = valueTier.tier;
   const environmentProblemFit = environmentAnalysis
     ? `${company.name}${topicParticle(company.name)} ${environmentAnalysis.internal_environment_analysis.current_growth_challenges.slice(0, 2).join(", ")} 같은 내부 문제 상황과 ${company.likelyNeeds.slice(0, 2).join(", ")} 니즈가 맞닿아 있습니다.`
@@ -227,8 +151,8 @@ export function fallbackScoreCompany(input: SocietyProfileInput, analysis: Socie
   return {
     fitScore: score,
     priorityTier,
-    tierReason: `${priorityTier}로 분류됩니다. ${valueTier.reason} 적합도 ${score}점은 별도 기준이며, 같은 Tier 안에서 컨택 우선순위를 나눌 때 사용하세요.`,
-    whyGoodTarget: `${company.name}${topicParticle(company.name)} ${company.industry} 영역에서 ${company.likelyNeeds.slice(0, 2).join(", ")} 니즈가 있어 ${input.societyName}의 관심 방향과 연결됩니다.`,
+    tierReason: `${priorityTier}로 분류됩니다. ${valueTier.reason} ${discovery.contactValueReason} 화면의 적합도는 같은 Tier 안에서 컨택 우선순위를 나누기 위한 보조 지표입니다.`,
+    whyGoodTarget: `${company.name}${topicParticle(company.name)} ${company.industry} 영역에서 ${company.likelyNeeds.slice(0, 2).join(", ")} 니즈가 있어 ${input.societyName}의 관심 방향과 연결됩니다. 후보 발굴 태그: ${discovery.discoveryTags.join(", ")}.`,
     expectedCompanyProblem: company.likelyNeeds.join(", "),
     solvableArea,
     whyOurSociety,
@@ -256,6 +180,7 @@ export function fallbackGenerateProjectProposal(request: ProjectProposalRequest)
       proposalTitle: `${company} ${need} 해결을 위한 ${society} 협업 제안`,
       proposalBackground: `${company}${topicParticle(company)} ${need}와 관련된 의사결정을 더 정교하게 만들 필요가 있습니다. ${society}${topicParticle(society)} 학생·청년 관점의 리서치와 분석으로 기업 내부에서 놓치기 쉬운 고객 맥락을 보완할 수 있습니다.`,
       companyProblemDefinition: `${need} 영역에서 고객의 실제 선택 이유, 경쟁 대안과의 비교 기준, 실행 우선순위를 명확히 정의해야 합니다.`,
+      whyNow: `고객 접점과 경쟁 환경이 빠르게 바뀌는 상황에서 ${company}가 ${need}를 늦게 검증하면 후속 캠페인이나 서비스 개선의 실행 타이밍을 놓칠 수 있습니다.`,
       projectGoals: `${duration} 안에 핵심 문제를 구조화하고, 기업이 바로 검토할 수 있는 실행 제안과 우선순위를 도출합니다.`,
       keyQuestions: `1. ${company}의 핵심 고객은 어떤 기준으로 선택하고 이탈하는가?\n2. 현재 제품·서비스·브랜드 경험에서 개선 우선순위는 무엇인가?\n3. 단기 실행 가능한 협업 과제는 무엇인가?`,
       scopeOfWork: "문제 정의, 2차 자료 조사, 간단한 고객 리서치, 경쟁 사례 비교, 핵심 제안 도출",
@@ -265,6 +190,11 @@ export function fallbackGenerateProjectProposal(request: ProjectProposalRequest)
       expectedImpact: "기업은 청년 고객 관점의 외부 인사이트와 우선 실행 과제를 빠르게 확보할 수 있습니다.",
       societyFit: `${society}${topicParticle(society)} ${request.analysis?.outreach_positioning || "학생 조직의 현장감 있는 관점과 구조화된 분석 역량을 결합할 수 있습니다."}`,
       collaborationRequests: "담당자 미팅, 공개 가능한 기초 자료, 중간 피드백 1회, 최종 발표 참석을 요청드립니다.",
+      qualityChecklist: [
+        "기업 문제 가설이 명확하게 제시됨",
+        "학회 역량과 예상 산출물이 연결됨",
+        "기업 담당자가 부담 없이 검토할 수 있는 협업 요청으로 마무리됨"
+      ],
       onePageSummary: `${projectTheme}\n\n${society}${topicParticle(society)} ${company}의 ${need} 과제를 학생·청년 고객 관점에서 분석하고, ${duration} 내 실행 가능한 제안과 산출물로 정리하는 협업을 제안합니다.`
     };
   }
@@ -274,6 +204,7 @@ export function fallbackGenerateProjectProposal(request: ProjectProposalRequest)
       proposalTitle: `${company}의 ${need} 해결을 위한 ${society} 산학협력 프로젝트 제안서`,
       proposalBackground: `${company}${topicParticle(company)} ${request.company?.recentBusinessContext || "변화하는 시장 환경"} 속에서 ${need}와 관련된 의사결정을 더 정교하게 만들 필요가 있습니다. 특히 청년 고객의 선택 기준과 사용 맥락은 내부 지표만으로 설명하기 어려운 경우가 많아, 외부 관점의 리서치와 구조화된 분석이 필요합니다. ${society}${topicParticle(society)} 기업의 실제 과제를 학습형 프로젝트가 아니라 실무 검토 가능한 제안서로 전환하는 것을 목표로 합니다.`,
       companyProblemDefinition: `현재 예상되는 핵심 문제는 ${need}입니다. 이를 세분화하면 고객이 어떤 상황에서 제품·서비스를 선택하는지, 경쟁 대안과 비교할 때 어떤 차별점이 충분히 전달되는지, 단기간에 검증 가능한 개선 과제가 무엇인지로 나눌 수 있습니다. 프로젝트는 문제를 넓게 나열하기보다 기업이 후속 논의에 바로 사용할 수 있는 의사결정 질문으로 재정의합니다.`,
+      whyNow: `${request.company?.recentBusinessContext || "시장 변화와 고객 행동 변화"}가 동시에 나타나는 시점이므로, ${company} 입장에서는 ${need}를 실제 고객 언어와 경쟁 맥락으로 빠르게 검증할 필요가 있습니다. 지금 가설을 검증하면 다음 캠페인, 제품 개선, 신사업 검토 전에 실행 우선순위를 낮은 비용으로 정리할 수 있습니다.`,
       projectGoals: `1. ${company}의 고객·시장·경쟁 맥락에서 핵심 문제를 명확히 정의합니다.\n2. 설문, 인터뷰, 데스크리서치를 통해 문제의 근거와 고객 언어를 확보합니다.\n3. ${company}가 검토할 수 있는 실행 과제, 우선순위, 기대효과를 제안합니다.\n4. 향후 산학협력 또는 기업 프로젝트로 확장 가능한 운영 방식을 제시합니다.`,
       keyQuestions: `1. ${company}의 주요 고객은 현재 어떤 상황과 기준으로 선택·이탈을 결정하는가?\n2. ${need} 중 기업이 단기간에 검증할 수 있는 핵심 과제는 무엇인가?\n3. 경쟁사 또는 대체 서비스는 유사 문제를 어떤 방식으로 해결하고 있는가?\n4. 청년·대학생 고객 관점에서 가장 설득력 있는 메시지, 기능, 경험 개선 방향은 무엇인가?\n5. 프로젝트 종료 후 기업이 바로 실행하거나 추가 검토할 수 있는 다음 단계는 무엇인가?`,
       scopeOfWork: `프로젝트 범위는 문제 정의, 자료 조사, 고객 리서치, 경쟁 사례 분석, 전략 방향 도출, 최종 제안서 작성으로 구성합니다. 필요 시 설문과 IDI를 병행하되, 기업 내부 기밀 데이터가 필요한 영역은 제외하고 공개 자료와 제공 가능한 범위의 자료를 기준으로 진행합니다. 최종 결과는 아이디어 나열이 아니라 우선순위가 있는 제안 패키지로 정리합니다.`,
@@ -283,6 +214,13 @@ export function fallbackGenerateProjectProposal(request: ProjectProposalRequest)
       expectedImpact: `${company}${topicParticle(company)} 청년 고객 관점의 구체적인 언어와 행동 근거를 확보하고, 내부 논의에 바로 올릴 수 있는 실행 후보를 얻을 수 있습니다. 또한 비교적 짧은 기간 안에 시장 반응, 고객 니즈, 커뮤니케이션 방향을 검증해 후속 프로젝트의 리스크를 줄일 수 있습니다.`,
       societyFit: `${society}${topicParticle(society)} ${request.analysis?.outreach_positioning || "학생·청년 관점의 리서치와 전략 제안 역량을 갖춘 조직입니다."} 특히 ${capabilities} 역량을 바탕으로 기업이 내부에서 접근하기 어려운 고객 맥락을 수집하고, 이를 실무자가 이해하기 쉬운 제안서와 발표 자료로 전환할 수 있습니다.`,
       collaborationRequests: `${company}에는 담당 부서 또는 실무 담당자 연결, 공개 가능한 기초 자료 제공, 착수 미팅 1회, 중간 피드백 1회, 최종 발표 참석을 요청드립니다. 프로젝트 범위와 산출물은 첫 미팅에서 기업의 우선순위에 맞춰 조정할 수 있습니다.`,
+      qualityChecklist: [
+        "기업의 현재 문제 상황과 의사결정 질문이 분리되어 있음",
+        "왜 지금 검토해야 하는지 시장·고객 맥락이 포함됨",
+        "수행 범위와 제외 범위가 과장 없이 정의됨",
+        "산출물이 기업 내부 논의에 쓰일 수 있는 형태로 구체화됨",
+        "학회가 기여할 수 있는 역량과 프로젝트 방식이 직접 연결됨"
+      ],
       onePageSummary: `제안 제목: ${company}의 ${need} 해결을 위한 ${society} 산학협력 프로젝트\n\n제안 배경: ${company}${topicParticle(company)} ${need}와 관련된 고객·시장 의사결정을 더 정교하게 만들 필요가 있습니다.\n\n목표: ${duration} 동안 문제 정의, 고객 리서치, 경쟁 분석, 실행 제안 도출을 진행합니다.\n\n핵심 산출물: 1페이지 요약, 인사이트 보고서, 실행 과제 우선순위, 최종 제안서 및 발표 자료\n\n기대효과: 기업은 청년 고객 관점의 외부 인사이트와 바로 논의 가능한 후속 실행안을 확보할 수 있습니다.`
     };
   }
@@ -291,6 +229,7 @@ export function fallbackGenerateProjectProposal(request: ProjectProposalRequest)
     proposalTitle: `${company}를 위한 2030 고객 인사이트 기반 산학협력 제안서`,
     proposalBackground: `${company}${topicParticle(company)} ${need}와 관련된 의사결정을 더 정교하게 만들 필요가 있습니다. 빠르게 변하는 청년 고객 행동과 경쟁 환경 때문에, 기업 내부 데이터만으로는 실제 선택 맥락을 충분히 설명하기 어렵습니다.`,
     companyProblemDefinition: `${need}를 핵심 문제로 보고, 고객 니즈·경쟁 대안·실행 우선순위 관점에서 기업이 바로 논의할 수 있는 문제로 재정의합니다.`,
+    whyNow: `2030 고객의 채널, 가격 민감도, 브랜드 선택 기준이 빠르게 바뀌고 있어 ${company}가 지금 문제 가설을 검증하면 후속 실행의 비용과 리스크를 낮출 수 있습니다.`,
     projectGoals: `${society}의 리서치와 분석 역량을 활용해 ${company}의 핵심 고객 문제를 검증하고, 실행 가능한 프로젝트 방향과 우선순위를 제안합니다.`,
     keyQuestions: `1. 고객은 어떤 맥락에서 ${company}를 선택하거나 이탈하는가?\n2. ${need} 중 우선 해결해야 할 문제는 무엇인가?\n3. 경쟁사 대비 강화할 수 있는 메시지와 경험은 무엇인가?\n4. 단기 실행 가능한 협업 과제는 무엇인가?`,
     scopeOfWork: "데스크리서치, 설문, 심층 인터뷰, 경쟁 사례 분석, 전략 방향 도출, 최종 제안서 작성",
@@ -300,6 +239,11 @@ export function fallbackGenerateProjectProposal(request: ProjectProposalRequest)
     expectedImpact: "기업은 청년 고객 관점의 raw insight와 바로 논의 가능한 프로젝트 아이디어를 낮은 부담으로 확보할 수 있습니다.",
     societyFit: `${society}${topicParticle(society)} 학생 고객 접근성과 구조화된 분석 역량을 동시에 보유하고 있어, ${company}가 내부에서 보기 어려운 외부 관점을 제공할 수 있습니다.`,
     collaborationRequests: "담당자 미팅, 공개 가능한 기초 자료, 중간 피드백, 최종 발표 참석을 요청드립니다.",
+    qualityChecklist: [
+      "배경-문제-목표-방법-산출물이 하나의 논리로 연결됨",
+      "기업이 얻는 실무 가치가 명확함",
+      "요청사항이 낮은 부담의 첫 논의로 설계됨"
+    ],
     onePageSummary: `${society}${topicParticle(society)} ${company}의 ${need} 과제를 학생·청년 관점에서 분석하고 실행 가능한 협업 제안으로 정리합니다. 프로젝트는 ${duration} 동안 문제 정의, 리서치, 경쟁 분석, 최종 제안서 작성 순서로 진행되며, 기업은 후속 의사결정에 활용할 수 있는 인사이트와 실행 우선순위를 확보할 수 있습니다.`
   };
 }
@@ -313,6 +257,7 @@ export function fallbackGenerateColdEmail(request: ColdEmailRequest): ColdEmailO
   const companyReason = request.scoreContext?.whyGoodTarget || `${company}${topicParticle(company)} ${request.company?.industry || "관련 산업"}에서 청년 고객 접점과 협업 확장 가능성이 높다고 판단했습니다.`;
   const companyValue = request.scoreContext?.solvableArea || "설문, 인터뷰, 시장 조사, 경쟁 사례 분석을 바탕으로 기업 내부에서 검토 가능한 인사이트와 실행 제안을 제공할 수 있습니다.";
   const attachmentSentence = request.optionalAttachmentMention || "필요하시면 학회 소개자료와 세부 협업 방향을 함께 전달드리겠습니다.";
+  const linkedInTemplates = buildLinkedInOutreachMessages(request);
 
   return {
     subjectLines: [
@@ -320,10 +265,20 @@ export function fallbackGenerateColdEmail(request: ColdEmailRequest): ColdEmailO
       `${company} 고객 과제 협업 제안`,
       `대외협력 담당 부서 연결 요청`
     ],
+    messageStrategy: `${company}를 선택한 이유를 먼저 밝히고, ${expectedProblem} 문제 가설을 낮은 강도로 제시한 뒤, ${direction}을 검토 가능한 협업 제안으로 연결합니다. 첫 요청은 계약이나 확정 제안이 아니라 담당 부서 연결 또는 20분 미팅으로 낮춥니다.`,
+    linkedinConnectionRequest: linkedInTemplates.linkedinConnectionRequest,
+    linkedinAcceptedMessage: linkedInTemplates.linkedinAcceptedMessage,
     emailBody: `안녕하세요, ${company} 담당자님.\n\n저는 ${society}의 ${sender}입니다. ${society}${topicParticle(society)} ${request.society?.oneLineIntroduction || "기업의 실제 과제를 학생 관점의 리서치와 전략 제안으로 연결하는 학생 조직"}입니다.\n\n${company}에 연락드린 이유는 ${companyReason} 특히 ${expectedProblem} 측면에서 외부 관점의 리서치와 학생·청년 고객 인사이트가 의미 있는 검토 자료가 될 수 있다고 보았습니다.\n\n이에 ${direction} 방향의 협업 가능성을 제안드립니다. ${companyValue} 이를 통해 ${company}에서는 고객 이해, 신규 프로젝트 검증, 실행 우선순위 논의에 활용 가능한 자료를 확보하실 수 있을 것으로 기대합니다.\n\n${attachmentSentence}\n\n가능하시다면 관련 담당 부서 연결 또는 20분 내외의 온라인 미팅을 통해 협업 가능성을 논의드리고자 합니다. 검토 후 회신 주시면 감사하겠습니다.\n\n감사합니다.\n${sender} 드림`,
     shortLinkedInDm: `안녕하세요. ${society}에서 ${company}와의 산학협력 가능성 검토를 요청드리고자 연락드립니다. ${direction} 방향으로 담당 부서 연결 또는 간단한 논의가 가능하실지 확인 부탁드립니다.`,
     followUpEmailMessage: `안녕하세요, 이전에 ${society}의 ${company} 협업 제안 검토를 요청드린 바 있어 후속으로 연락드립니다. 검토에 필요한 소개자료나 협업 방향을 추가로 전달드릴 수 있으며, 관련 담당 부서 연결 또는 20분 내외의 온라인 미팅 가능 여부를 확인해 주시면 감사하겠습니다.`,
     oneSentencePitch: `${society}${topicParticle(society)} 학생·청년 고객 인사이트와 구조화된 분석 역량을 바탕으로 ${company}의 과제를 검토 가능한 협업 제안으로 구체화합니다.`,
-    suggestedCtaSentence: "가능하시다면 관련 담당 부서 연결 또는 다음 주 중 20분 내외의 온라인 미팅 가능 여부를 회신 부탁드립니다."
+    suggestedCtaSentence: "가능하시다면 관련 담당 부서 연결 또는 다음 주 중 20분 내외의 온라인 미팅 가능 여부를 회신 부탁드립니다.",
+    qualityChecklist: [
+      "기업 선정 이유가 첫 본문에 포함됨",
+      "문제/기회 가설이 단정이 아니라 검토 관점으로 표현됨",
+      "제안 방향과 기업 기대가치가 한 문단 안에서 연결됨",
+      "CTA가 담당 부서 연결 또는 짧은 미팅으로 낮게 설계됨",
+      "사적 연락처나 검증되지 않은 정보가 생성되지 않음"
+    ]
   };
 }

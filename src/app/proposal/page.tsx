@@ -297,18 +297,20 @@ function ProposalContent() {
                   {[
                     ["01", "제안 배경", output.proposalBackground],
                     ["02", "기업 문제 정의", output.companyProblemDefinition],
-                    ["03", "프로젝트 목표", output.projectGoals],
-                    ["04", "핵심 질문", output.keyQuestions],
-                    ["05", "수행 범위", output.scopeOfWork],
-                    ["06", "방법론", output.methodology],
-                    ["07", "일정/운영 방식", output.timelineAndOperation],
-                    ["08", "예상 산출물", output.expectedDeliverables],
-                    ["09", "기대효과", output.expectedImpact],
-                    ["10", "학회 적합성", output.societyFit],
-                    ["11", "협업 요청사항", output.collaborationRequests]
+                    ["03", "왜 지금 중요한가", output.whyNow],
+                    ["04", "프로젝트 목표", output.projectGoals],
+                    ["05", "핵심 질문", output.keyQuestions],
+                    ["06", "수행 범위", output.scopeOfWork],
+                    ["07", "방법론", output.methodology],
+                    ["08", "일정/운영 방식", output.timelineAndOperation],
+                    ["09", "예상 산출물", output.expectedDeliverables],
+                    ["10", "기대효과", output.expectedImpact],
+                    ["11", "학회 적합성", output.societyFit],
+                    ["12", "협업 요청사항", output.collaborationRequests]
                   ].map(([number, title, content]) => (
                     <OutputSection key={title} number={number} title={title} content={content} />
                   ))}
+                  <ChecklistSection items={output.qualityChecklist} />
                 </div>
               </div>
             ) : (
@@ -350,6 +352,27 @@ function OutputSection({ number, title, content }: { number: string; title: stri
   );
 }
 
+function ChecklistSection({ items }: { items: string[] }) {
+  const content = items.map((item) => `- ${item}`).join("\n");
+
+  return (
+    <div className="grid gap-3 bg-slate-50 p-5 sm:grid-cols-[4rem_1fr]">
+      <div className="text-xs font-bold text-cyan-800">QC</div>
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-bold text-slate-950">품질 체크리스트</p>
+          <CopyButton content={content} />
+        </div>
+        <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-700">
+          {items.map((item) => (
+            <li key={item} className="rounded-md border border-slate-200 bg-white px-3 py-2">{item}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function buildProposalMarkdown(output: ProjectProposalOutput, companyName: string, templateName: string, duration: string) {
   return `# ${output.proposalTitle}
 
@@ -365,6 +388,9 @@ ${output.proposalBackground}
 
 ## 기업 문제 정의
 ${output.companyProblemDefinition}
+
+## 왜 지금 중요한가
+${output.whyNow}
 
 ## 프로젝트 목표
 ${output.projectGoals}
@@ -392,6 +418,9 @@ ${output.societyFit}
 
 ## 협업 요청사항
 ${output.collaborationRequests}
+
+## 품질 체크리스트
+${output.qualityChecklist.map((item) => `- ${item}`).join("\n")}
 `;
 }
 
@@ -406,7 +435,7 @@ async function buildFilledTemplatePptx(templateFile: File, output: ProjectPropos
     },
     "ppt/slides/slide4.xml": {
       "기업명": companyName,
-      "본문": compactForSlide(`${output.proposalBackground}\n\n${output.companyProblemDefinition}\n\n${output.keyQuestions}`, 420)
+      "본문": compactForSlide(`${output.proposalBackground}\n\n${output.companyProblemDefinition}\n\n${output.whyNow}\n\n${output.keyQuestions}`, 420)
     },
     "ppt/slides/slide5.xml": {
       "기업명": companyName,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 
 import { DashboardShell } from "@/components/DashboardShell";
 import { Badge, EmptyState, ErrorBox, LoadingState, PageHeader } from "@/components/ui";
@@ -58,9 +58,9 @@ export default function AnalysisPage() {
   return (
     <DashboardShell>
       <PageHeader
-        eyebrow="내부/외부 분석"
+        eyebrow="기업 문제 분석"
         title="기업의 문제 상황과 시장 압력을 먼저 분석합니다"
-        description="학회 분석이 아니라, 컨택할 기업들이 내부적으로 겪을 법한 문제와 외부 시장 변화를 분석한 뒤 기업 선정 기준을 만듭니다."
+        description="컨택할 기업들이 내부적으로 겪을 법한 문제와 외부 시장 변화를 분석한 뒤, 기업 발굴과 제안서 생성에 쓸 타깃 선정 기준을 만듭니다."
       />
 
       {!society || !analysis ? (
@@ -106,6 +106,21 @@ export default function AnalysisPage() {
                 <ListBlock title="우선 연락 기준" items={environment.recommended_target_company_criteria} />
                 <BadgeBlock title="기업 검색 키워드" items={environment.problem_keywords_for_company_search} />
               </Section>
+
+              <div className="rounded-lg border border-teal-100 bg-teal-50 p-5 shadow-sm">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-teal-900">다음 단계</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-700">
+                      이 기준을 바탕으로 기업을 찾고, 각 기업별 담당 부서와 연락 루트를 확인한 뒤 제안서/콜드메일 생성으로 이어집니다.
+                    </p>
+                  </div>
+                  <Link href="/companies" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-teal-900">
+                    기업 후보 보기
+                    <ArrowRight size={16} />
+                  </Link>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">

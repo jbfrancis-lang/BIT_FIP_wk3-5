@@ -4,14 +4,13 @@ import Link from "next/link";
 import { BookmarkPlus, ExternalLink, FileText, MailPlus, Users } from "lucide-react";
 
 import { Badge, FitScore } from "@/components/ui";
+import { buildRecipientFit, contactAvailability } from "@/lib/contactRoutes";
 import { collaborationTypeLabels, companySizeLabels } from "@/lib/labels";
 import { readSavedCompanies, writeSavedCompanies } from "@/lib/storage";
-import type { CompanyLead, CompanyScore, ContactRoute, SavedCompany } from "@/lib/types";
-
-const publicEmailFallback = "검증된 공개 이메일이 없습니다. 공식 문의 페이지 또는 제휴/파트너십 문의 채널을 이용하세요.";
+import type { CompanyLead, CompanyScore, SavedCompany } from "@/lib/types";
 
 export function CompanyCard({ company, score }: { company: CompanyLead; score: CompanyScore | null }) {
-  const routes = contactRoutesFor(company);
+  const recipientFit = buildRecipientFit(company, score);
 
   function handleSave() {
     const saved: SavedCompany = {
@@ -62,6 +61,9 @@ export function CompanyCard({ company, score }: { company: CompanyLead; score: C
         <Info label="왜 우리 학회인가" value={score?.whyOurSociety || "학회만의 설득 논리를 정리하는 중입니다."} />
         <Info label="추천 프로젝트 방향" value={score?.recommendedProjectDirection || "분석 대기 중입니다."} />
         <Info label="추천 접촉 부서" value={company.suggestedDepartment} />
+        <Info label="1순위 수신자" value={`${recipientFit.primaryDepartment} · ${recipientFit.recommendedRecipientTitle}`} />
+        <Info label="담당자 적합도" value={`${fitLevel(recipientFit.criteria.overall)} · ${recipientFit.primaryDepartment}의 ${recipientFit.recommendedRecipientTitle}에게 먼저 접근하는 것을 추천드립니다.`} />
+        <Info label="사용자가 해야 할 일" value={recipientFit.userActionChecklist.slice(0, 2).join(" ")} />
         <Info label="연락 가능성" value={contactAvailability(company, score?.contactAvailability)} />
       </div>
 
@@ -69,10 +71,10 @@ export function CompanyCard({ company, score }: { company: CompanyLead; score: C
         <div className="min-w-0 space-y-2 text-sm">
           <p className="text-xs font-bold text-slate-500">실제 컨택 루트</p>
           <div className="flex flex-wrap gap-2">
-            {routes.slice(0, 4).map((route) => (
-              <a key={`${route.label}-${route.url}`} className="contact-link" href={route.url} target="_blank" rel="noreferrer" title={route.description}>
+            {recipientFit.contactRoutePriority.slice(0, 4).map(({ route, rank, reason }) => (
+              <a key={`${route.label}-${route.url}`} className="contact-link" href={route.url} target="_blank" rel="noreferrer" title={reason}>
                 {route.type === "linkedin_people_search" ? <Users size={14} /> : null}
-                {route.label} <ExternalLink size={14} />
+                {rank}순위 {route.label} <ExternalLink size={14} />
               </a>
             ))}
             {company.contact.publicEmail ? (
@@ -81,6 +83,7 @@ export function CompanyCard({ company, score }: { company: CompanyLead; score: C
               </a>
             ) : null}
           </div>
+          <p className="max-w-3xl text-xs leading-5 text-slate-500">{recipientFit.firstAction}</p>
           <p className="max-w-3xl text-xs leading-5 text-slate-500">{contactAvailability(company, score?.contactAvailability)}</p>
         </div>
 
@@ -115,38 +118,6 @@ export function CompanyCard({ company, score }: { company: CompanyLead; score: C
   );
 }
 
-function contactRoutesFor(company: CompanyLead): ContactRoute[] {
-  if (company.contact.routes?.length) return company.contact.routes;
-  const routes: ContactRoute[] = [];
-  if (company.contact.contactPage) {
-    routes.push({
-      type: "official_contact",
-      label: "공식 문의 페이지",
-      url: company.contact.contactPage,
-      description: "공식 사이트에서 확인 가능한 공개 문의 접점입니다."
-    });
-  }
-  if (company.contact.linkedinUrl) {
-    routes.push({
-      type: "linkedin_company",
-      label: "LinkedIn 회사 페이지",
-      url: company.contact.linkedinUrl,
-      description: "회사 공개 페이지에서 담당 부서와 공개 게시글을 확인합니다."
-    });
-  }
-  return routes;
-}
-
-function contactAvailability(company: CompanyLead, scoreAvailability?: string) {
-  if (company.contact.publicEmail) {
-    return `공개 이메일 ${company.contact.publicEmail} 사용 가능`;
-  }
-  if (!scoreAvailability || scoreAvailability.includes("No verified public email")) {
-    return publicEmailFallback;
-  }
-  return scoreAvailability;
-}
-
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md bg-slate-50 p-3">
@@ -154,4 +125,10 @@ function Info({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-sm leading-6 text-slate-700">{value}</p>
     </div>
   );
+}
+
+function fitLevel(score: number) {
+  if (score >= 78) return "높음";
+  if (score >= 62) return "보통";
+  return "확인 필요";
 }

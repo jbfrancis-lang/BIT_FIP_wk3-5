@@ -1,211 +1,94 @@
 import Link from "next/link";
-import type React from "react";
-import { ArrowRight, BarChart3, Building2, CheckCircle2, FileText, MailPlus, Network, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
+import { ArrowRight, Building2, FileText, MailPlus, Sparkles } from "lucide-react";
 
-const capabilities = [
+import { DashboardShell } from "@/components/DashboardShell";
+import { PageHeader } from "@/components/ui";
+
+const primaryActions = [
   {
-    title: "학회 맥락 구조화",
-    description: "소개자료, 활동 이력, 역량을 기업 협업 관점의 포지셔닝으로 정리합니다.",
-    icon: UsersRound
+    href: "/profile",
+    title: "학회 프로필",
+    description: "학회 소개, 활동 이력, 역량, 관심 산업을 입력하고 기업 협업 관점의 기본 분석을 만듭니다.",
+    icon: Sparkles,
+    cta: "프로필 입력하기"
   },
   {
-    title: "협업 후보 발굴",
-    description: "학회의 관심 산업과 강점을 바탕으로 컨택할 만한 기업 후보를 탐색합니다.",
-    icon: Building2
-  },
-  {
-    title: "제안서와 이메일 연결",
-    description: "기업별 문제 상황에 맞춘 제안 방향과 콜드메일 초안을 이어서 생성합니다.",
-    icon: MailPlus
+    href: "/companies",
+    title: "기업 찾기",
+    description: "기업 분석을 확인하고, 각 기업별 프로젝트 제안과 콜드메일 생성으로 이어집니다.",
+    icon: Building2,
+    cta: "기업 후보 보기"
   }
 ];
 
-const steps = [
-  "기업 후보 발굴과 티어 분류",
-  "담당자와 연락 루트 확인",
-  "제안서와 콜드메일 생성",
-  "저장 후 후속 상태 관리"
-];
-
-const previewItems = [
-  { label: "기업 분류", value: "Tier 1", tone: "bg-teal-400" },
-  { label: "담당 루트", value: "전략/BD", tone: "bg-emerald-400" },
-  { label: "다음 액션", value: "후속 메일", tone: "bg-amber-300" }
+const nestedFlow = [
+  { label: "기업 분석", description: "문제 상황, 추천 부서, 컨택 루트 확인" },
+  { label: "프로젝트 제안", description: "내외부 환경 근거를 바탕으로 제안서 작성" },
+  { label: "콜드메일 생성", description: "동일한 근거를 바탕으로 공식 메시지 작성" }
 ];
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#f4f7f8] text-slate-950">
-      <section className="bg-[linear-gradient(180deg,#ffffff_0%,#eef6f6_58%,#f4f7f8_100%)] text-slate-950">
-        <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-5 md:px-8">
-        <nav className="flex items-center justify-between gap-4 rounded-lg border border-white/70 bg-white/75 px-4 py-3 shadow-[0_12px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-slate-950 text-white shadow-sm">
-              <UsersRound size={20} />
-            </div>
-            <div>
-              <p className="text-lg font-bold text-slate-950">SocietyBridge AI</p>
-              <p className="text-xs font-medium text-slate-500">학회용 기업 협업 발굴</p>
-            </div>
-          </Link>
-          <Link
-            href="/profile"
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-teal-900"
-          >
-            서비스 바로가기
-            <ArrowRight size={16} />
-          </Link>
-        </nav>
+    <DashboardShell>
+      <PageHeader
+        eyebrow="작업 시작"
+        title="학회 프로필을 정리하고, 바로 기업을 찾습니다"
+        description="랜딩 페이지 없이 핵심 작업만 남겼습니다. 먼저 학회 정보를 입력한 뒤 기업 찾기에서 기업 분석, 프로젝트 제안, 콜드메일 생성으로 내려가세요."
+      />
 
-        <div className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[0.95fr_1.05fr]">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-teal-100 bg-white/80 px-3 py-1.5 text-xs font-bold text-teal-800 shadow-sm backdrop-blur">
-              <Sparkles size={14} />
-              대학 학회와 기업 협업을 잇는 작업대
-            </div>
-            <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.16] text-slate-950 md:text-5xl">
-              <span className="block">학회의 강점을 기업이 이해하는</span>
-              <span className="block">협업 제안으로</span>
-              <span className="block">바꿉니다</span>
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">
-              SocietyBridge AI는 학회 소개자료와 활동 이력을 분석해 기업 후보, 담당자/연락 루트, 프로젝트 제안 방향, 콜드메일, 후속 상태까지 한 흐름으로 정리하는 산학협력 아웃리치 서비스입니다.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link href="/profile" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:bg-teal-900">
-                서비스 바로가기
-                <ArrowRight size={16} />
-              </Link>
-              <a
-                href="#overview"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:border-slate-300 hover:bg-white"
-              >
-                서비스 흐름 보기
-              </a>
-            </div>
-            <div className="mt-7 grid gap-3 sm:grid-cols-3">
-              <Metric value="4단계" label="입력부터 컨택까지" />
-              <Metric value="한국어" label="분석 결과 정리" />
-              <Metric value="후속 관리" label="상태와 다음 액션" />
-            </div>
-          </div>
-
-          <div className="relative overflow-hidden rounded-lg border border-white/80 bg-white/70 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl">
-            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white" />
-            <div className="pointer-events-none absolute -top-24 right-8 h-44 w-44 rounded-full bg-white/70 blur-3xl" />
-            <div className="relative rounded-lg border border-white/70 bg-white/80 p-4 text-slate-950 shadow-inner shadow-white backdrop-blur">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold text-teal-700">실행 화면 미리보기</p>
-                  <p className="mt-1 text-xl font-bold">산학협력 아웃리치 보드</p>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {primaryActions.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="grid h-12 w-12 place-items-center rounded-lg bg-slate-950 text-white">
+                  <Icon size={22} />
                 </div>
-                <div className="rounded-md border border-teal-100 bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800">분석 준비</div>
+                <ArrowRight className="text-slate-300 transition group-hover:translate-x-1 group-hover:text-teal-700" size={20} />
               </div>
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                <DashboardTile icon={<Building2 size={17} />} title="기업 발굴" value="Tier 분류" />
-                <DashboardTile icon={<BarChart3 size={17} />} title="연락 루트" value="담당 부서" />
-                <DashboardTile icon={<FileText size={17} />} title="산출물" value="제안/메일" />
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                {previewItems.map((item) => (
-                  <div key={item.label} className="rounded-lg border border-slate-200 bg-white/80 p-3 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />
-                      <span className="text-xs font-semibold text-slate-500">{item.label}</span>
-                    </div>
-                    <p className="mt-2 text-lg font-bold text-slate-950">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative mt-4 grid gap-3 rounded-lg border border-white/70 bg-white/85 p-3 shadow-sm backdrop-blur">
-              {steps.map((step, index) => (
-                <div key={step} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-sm font-bold text-slate-700 shadow-sm">
-                    {index + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-900">{step}</p>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-                      <div className="h-full rounded-full bg-teal-700" style={{ width: `${35 + index * 18}%` }} />
-                    </div>
-                  </div>
-                  <CheckCircle2 className="shrink-0 text-teal-700" size={18} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        </div>
-      </section>
-
-      <section id="overview" className="border-t border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-12 md:px-8 lg:grid-cols-[0.85fr_1.15fr]">
-          <div>
-            <p className="text-xs font-bold text-teal-700">서비스 개요</p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-950">무엇을 도와주나요?</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
-              학회가 가진 경험을 기업 입장에서 읽히는 협업 제안 언어로 바꾸고, 컨택 대상 선정부터 후속 연락까지 다음 액션이 끊기지 않게 정리합니다.
-            </p>
-            <div className="mt-5 rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-7 text-slate-700">
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-1 shrink-0 text-teal-800" size={18} />
-                <p>연락처는 공개된 채널과 사용자가 제공한 정보만 기준으로 표시합니다.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-3">
-            {capabilities.map((item) => {
-              const Icon = item.icon;
-              return (
-                <article key={item.title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-white text-teal-800 shadow-sm">
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="mt-4 text-base font-bold text-slate-950">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-950">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-white md:flex-row md:items-center md:justify-between md:px-8">
-          <div>
-            <p className="text-sm font-bold text-teal-200">준비되셨나요?</p>
-            <p className="mt-1 text-xl font-bold">학회 정보를 입력하고 협업 후보를 찾아보세요.</p>
-          </div>
-          <Link href="/profile" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-teal-50">
-            서비스 시작하기
-            <Network size={16} />
-          </Link>
-        </div>
-      </section>
-    </main>
-  );
-}
-
-function Metric({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-      <p className="text-lg font-bold text-slate-950">{value}</p>
-      <p className="mt-1 text-xs font-semibold text-slate-500">{label}</p>
-    </div>
-  );
-}
-
-function DashboardTile({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white/80 p-3 shadow-sm">
-      <div className="flex items-center gap-2 text-teal-800">
-        {icon}
-        <span className="text-xs font-bold text-slate-600">{title}</span>
+              <h2 className="mt-5 text-2xl font-bold text-slate-950">{item.title}</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
+              <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-teal-800">
+                {item.cta}
+                <ArrowRight size={15} />
+              </p>
+            </Link>
+          );
+        })}
       </div>
-      <p className="mt-3 text-lg font-bold text-slate-950">{value}</p>
-    </div>
+
+      <section className="mt-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2 text-sm font-bold text-slate-950">
+          <Building2 size={17} className="text-teal-800" />
+          기업 찾기 하위 구조
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {nestedFlow.map((item, index) => (
+            <div key={item.label} className="rounded-md border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-white text-xs font-bold text-teal-800 ring-1 ring-slate-200">
+                  {index + 1}
+                </span>
+                <p className="text-sm font-bold text-slate-950">{item.label}</p>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+          <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2.5 py-1">
+            <FileText size={13} /> 제안서는 기업별 세부 작업
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2.5 py-1">
+            <MailPlus size={13} /> 콜드메일도 기업별 세부 작업
+          </span>
+        </div>
+      </section>
+    </DashboardShell>
   );
 }

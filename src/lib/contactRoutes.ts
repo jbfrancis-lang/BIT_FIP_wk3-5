@@ -3,10 +3,10 @@ import type { CompanyLead, CompanyScore, ContactRoute, RecipientFit } from "@/li
 export const publicEmailFallback = "검증된 공개 이메일은 없습니다. 공식 문의 페이지 또는 파트너십 문의 폼을 활용하세요.";
 
 export function getContactRoutes(company: CompanyLead): ContactRoute[] {
-  if (company.contact.routes?.length) return company.contact.routes;
+  const routes: ContactRoute[] = [...(company.contact.routes || [])];
+  const hasType = (type: ContactRoute["type"]) => routes.some((route) => route.type === type);
 
-  const routes: ContactRoute[] = [];
-  if (company.contact.contactPage) {
+  if (company.contact.contactPage && !hasType("official_contact")) {
     routes.push({
       type: "official_contact",
       label: "공식 문의 페이지",
@@ -16,7 +16,7 @@ export function getContactRoutes(company: CompanyLead): ContactRoute[] {
       verified: true
     });
   }
-  if (company.contact.linkedinUrl) {
+  if (company.contact.linkedinUrl && !hasType("linkedin_company")) {
     routes.push({
       type: "linkedin_company",
       label: "LinkedIn 회사 페이지",
@@ -25,6 +25,9 @@ export function getContactRoutes(company: CompanyLead): ContactRoute[] {
       source: "mock_data",
       verified: false
     });
+  }
+  if (!hasType("linkedin_people_search")) {
+    routes.push(buildLinkedInPeopleSearchRoute(company));
   }
 
   return routes;
@@ -49,6 +52,10 @@ export function buildRecipientFit(company: CompanyLead, score?: CompanyScore | n
   const alternativeDepartments = unique([...(departments.slice(1)), ...inferAlternativeDepartments(company)]).slice(0, 4);
   const recommendedRecipientTitle = inferRecipientTitle(company, primaryDepartment);
   const routePriority = prioritizeRoutes(company, routes, primaryDepartment);
+  const responseSignals = buildResponseSignals(company, primaryDepartment, recommendedRecipientTitle);
+  const linkedinSearchKeywords = buildLinkedInSearchKeywords(company, primaryDepartment, recommendedRecipientTitle);
+  const manualVerificationHints = buildManualVerificationHints(company, primaryDepartment, recommendedRecipientTitle);
+  const outreachApproach = buildOutreachApproach(company, score, primaryDepartment, recommendedRecipientTitle);
   const criteria = {
     decisionAuthority: scoreByDepartment(primaryDepartment, ["전략", "사업개발", "제휴", "오픈이노베이션", "대외협력"]),
     executionRelevance: scoreByDepartment(primaryDepartment, ["마케팅", "브랜드", "프로덕트", "고객경험", "HR", "채용", "전략"]),
@@ -72,13 +79,30 @@ export function buildRecipientFit(company: CompanyLead, score?: CompanyScore | n
     alternativeDepartments,
     recommendedRecipientTitle,
     criteria,
-    reasoning: `담당자 적합도 측면에서는 ${projectContext}을 검토하거나 관련 실무 부서로 연결할 가능성이 높은 ${primaryDepartment}을 1순위 접점으로 두는 것을 추천드립니다. 수신자는 ${recommendedRecipientTitle}를 우선 탐색하는 것이 좋습니다.`,
+    responseLikelihood: fitLevel(criteria.overall),
+    responseSignals,
+    linkedinSearchKeywords,
+    manualVerificationHints,
+    outreachApproach,
+    reasoning: `전환 적합도 측면에서는 ${projectContext}을 검토하거나 관련 실무 부서로 연결할 가능성이 높은 ${primaryDepartment}을 1순위 접점으로 두는 것을 추천드립니다. 수신자는 ${recommendedRecipientTitle}를 우선 탐색하고, 동문·지인 경유 가능성이나 최근 LinkedIn 활동성은 사용자가 직접 확인하는 방식이 안전합니다.`,
     firstAction: routePriority[0]
-      ? `${routePriority[0].route.label}를 1순위로 확인한 뒤, ${recommendedRecipientTitle}에게 연결될 수 있도록 제목과 첫 문단에서 제안 목적을 명확히 밝히는 것을 추천드립니다.`
+      ? `${routePriority[0].route.label}를 1순위로 확인한 뒤, ${recommendedRecipientTitle}에게 연결될 수 있도록 제목과 첫 문단에서 '${outreachApproach.openingHook}' 흐름을 명확히 밝히는 것을 추천드립니다.`
       : `공식 홈페이지에서 ${primaryDepartment} 또는 ${recommendedRecipientTitle} 연결 가능 경로를 먼저 확인하는 것을 추천드립니다.`,
     userActionChecklist: buildUserActionChecklist(company, routePriority, primaryDepartment, recommendedRecipientTitle),
     contactRoutePriority: routePriority,
     noPublicEmailNotice: company.contact.publicEmail ? "" : publicEmailFallback
+  };
+}
+
+function buildLinkedInPeopleSearchRoute(company: CompanyLead): ContactRoute {
+  const keywords = [company.name, company.suggestedDepartment, "담당자", "산학협력", "제휴"].filter(Boolean).join(" ");
+  return {
+    type: "linkedin_people_search",
+    label: "LinkedIn 담당자 검색",
+    url: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`,
+    description: "자동 수집 없이 사용자가 직접 재직 여부, 직무, 활동성을 확인하는 검색 링크입니다.",
+    source: "future_search_api",
+    verified: false
   };
 }
 
@@ -171,8 +195,9 @@ function buildUserActionChecklist(
       ? `1순위 링크인 '${firstRoute.label}'를 열고 ${primaryDepartment} 또는 ${recommendedRecipientTitle}와 연결되는 공식 접점을 직접 확인하세요.`
       : `${company.name} 공식 홈페이지에서 ${primaryDepartment} 또는 ${recommendedRecipientTitle} 연결 경로를 직접 확인하세요.`,
     linkedinRoute
-      ? `${linkedinRoute.label}에서는 회사명, 현재 재직 여부, 직무 키워드가 맞는지 직접 확인한 뒤 후보 담당자 URL이나 이름을 저장하세요.`
+      ? `${linkedinRoute.label}에서는 회사명, 현재 재직 여부, 직무 키워드, 최근 게시글·댓글 활동성을 직접 확인한 뒤 후보 담당자 URL이나 이름을 저장하세요.`
       : "LinkedIn 또는 공개 검색에서 회사명과 추천 부서명을 함께 검색해 후보 담당자를 직접 확인하세요.",
+    "동문, 선배, 학회 네트워크, 이전 산학협력 접점이 있는지 먼저 확인하고 가능하면 1촌 신청 전에 경유 소개를 요청하세요.",
     company.contact.publicEmail
       ? `검증된 공개 이메일 ${company.contact.publicEmail}로 1차 메일을 발송하고, 같은 날 공식 문의 폼에도 동일한 요지를 남기세요.`
       : "검증된 공개 이메일이 없으므로 공식 문의 페이지 또는 파트너십 문의 폼에 먼저 남기고, LinkedIn DM은 보조 경로로 사용하세요.",
@@ -181,6 +206,60 @@ function buildUserActionChecklist(
   ];
 
   return actions;
+}
+
+function buildResponseSignals(company: CompanyLead, primaryDepartment: string, recommendedRecipientTitle: string) {
+  const signals = [
+    `${primaryDepartment}은 제안 내용을 내부 실무 부서로 연결할 가능성이 높은 접점입니다.`,
+    `${recommendedRecipientTitle}는 프로젝트 검토 또는 담당자 연결 요청을 이해할 가능성이 높은 수신자 유형입니다.`
+  ];
+  if (company.contact.publicEmail) signals.push("검증된 공개 이메일이 있어 공식 문의와 병행 발송이 가능합니다.");
+  if (company.contact.linkedinUrl || getContactRoutes(company).some((route) => route.type === "linkedin_people_search")) {
+    signals.push("LinkedIn에서는 재직 여부, 직무 적합성, 최근 활동성을 사용자가 직접 확인할 수 있습니다.");
+  }
+  if (company.size === "large_enterprise" || company.size === "mid_sized_company") {
+    signals.push("조직 규모가 커 담당 부서 연결 요청형 CTA가 직접 제안보다 더 자연스럽습니다.");
+  } else {
+    signals.push("조직 규모상 실무 책임자 또는 리드급 담당자에게 바로 검토 요청을 보낼 여지가 있습니다.");
+  }
+  return signals.slice(0, 4);
+}
+
+function buildLinkedInSearchKeywords(company: CompanyLead, primaryDepartment: string, recommendedRecipientTitle: string) {
+  return unique([
+    `${company.name} ${primaryDepartment}`,
+    `${company.name} ${recommendedRecipientTitle}`,
+    `${company.name} 산학협력`,
+    `${company.name} 제휴`,
+    `${company.name} ${company.industry} 마케팅`
+  ]).slice(0, 5);
+}
+
+function buildManualVerificationHints(company: CompanyLead, primaryDepartment: string, recommendedRecipientTitle: string) {
+  return [
+    `${company.name} 재직 여부와 현재 직무가 ${primaryDepartment} 또는 ${recommendedRecipientTitle}와 맞는지 확인`,
+    "최근 3개월 내 LinkedIn 게시글, 댓글, 프로필 업데이트 등 활동성이 있는지 확인",
+    "연세대, BIT, 학회 선배, 지인 경유 가능성이 있는지 확인",
+    "공식 문의 페이지와 LinkedIn 개인 메시지를 같은 날 병행할지 결정",
+    "확인한 담당자명, 직책, URL은 저장 기업 메모에 직접 입력"
+  ];
+}
+
+function buildOutreachApproach(
+  company: CompanyLead,
+  score: CompanyScore | null | undefined,
+  primaryDepartment: string,
+  recommendedRecipientTitle: string
+) {
+  const projectDirection = score?.recommendedProjectDirection || `${company.likelyNeeds[0] || company.industry} 관련 산학협력 프로젝트`;
+  const expectedProblem = score?.expectedCompanyProblem || company.likelyNeeds.slice(0, 2).join(", ");
+
+  return {
+    subjectHook: `${company.name} ${projectDirection} 검토 요청`,
+    openingHook: `${company.name}의 ${expectedProblem} 과제를 외부 학생·청년 관점에서 검토할 수 있다고 보았습니다.`,
+    firstCta: `${primaryDepartment} 또는 ${recommendedRecipientTitle} 연결이 가능하신지 먼저 여쭙는 낮은 CTA를 권장합니다.`,
+    followUpAction: "3~5영업일 후에는 자료 재전송보다 담당 부서 연결 가능 여부만 짧게 확인하는 후속 메시지를 권장합니다."
+  };
 }
 
 function inferPrimaryDepartment(company: CompanyLead) {
@@ -230,6 +309,12 @@ function warmIntroScore(company: CompanyLead) {
   if (company.size === "mid_sized_company") return 72;
   if (company.size === "startup" || company.size === "SME") return 78;
   return 64;
+}
+
+function fitLevel(score: number): "높음" | "보통" | "확인 필요" {
+  if (score >= 78) return "높음";
+  if (score >= 62) return "보통";
+  return "확인 필요";
 }
 
 function splitDepartments(value: string) {

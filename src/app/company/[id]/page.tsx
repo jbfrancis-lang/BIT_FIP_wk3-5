@@ -152,8 +152,10 @@ export default function CompanyDetailPage() {
             <DetailBlock title="우려 또는 리스크" value={(score?.risks || []).join(" ")} />
             <DetailBlock title="추천 접촉 부서" value={company.suggestedDepartment} />
             <DetailBlock title="1순위 수신자" value={`${recipientFit.primaryDepartment} · ${recipientFit.recommendedRecipientTitle}`} />
-            <DetailBlock title="담당자 접근 추천" value={`담당자 적합도는 ${fitLevel(recipientFit.criteria.overall)} 수준입니다. ${recipientFit.primaryDepartment}의 ${recipientFit.recommendedRecipientTitle}에게 먼저 접근하고, 필요 시 ${recipientFit.alternativeDepartments.slice(0, 2).join(", ") || "전략/사업개발 관련 부서"}로 확장하는 것을 추천드립니다.`} />
+            <DetailBlock title="전환 적합도" value={`${recipientFit.responseLikelihood} 수준입니다. ${recipientFit.primaryDepartment}의 ${recipientFit.recommendedRecipientTitle}에게 먼저 접근하고, 필요 시 ${recipientFit.alternativeDepartments.slice(0, 2).join(", ") || "전략/사업개발 관련 부서"}로 확장하는 것을 추천드립니다.`} />
             <DetailBlock title="수신자 추천 근거" value={recipientFit.reasoning} />
+            <DetailBlock title="제목/첫 문장 Hook" value={`${recipientFit.outreachApproach.subjectHook} / ${recipientFit.outreachApproach.openingHook}`} />
+            <DetailBlock title="낮은 CTA와 후속 액션" value={`${recipientFit.outreachApproach.firstCta} ${recipientFit.outreachApproach.followUpAction}`} />
             <DetailBlock title="적합도 근거" value={score?.fitReasoning || "분석 대기 중입니다."} />
             <DetailBlock title="협업 유형 Fit" value={score?.collaborationTypeFit || company.possibleCollaborationTypes.map((type) => collaborationTypeLabels[type]).join(", ")} />
           </section>
@@ -186,6 +188,27 @@ function ContactSection({ company, score, recipientFit }: { company: CompanyLead
         <div className="rounded-md bg-cyan-50 p-4">
           <p className="text-sm font-bold text-cyan-950">AI 추천 요약</p>
           <p className="mt-2 text-sm leading-6 text-cyan-950">{recipientFit.firstAction}</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-md bg-white/70 p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-900">수신자</p>
+              <ul className="mt-2 space-y-2 text-sm leading-6 text-cyan-950">
+                {recipientFit.responseSignals.map((signal) => (
+                  <li key={signal} className="flex gap-2">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-700" />
+                    <span>{signal}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-md bg-white/70 p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-900">접근 방식</p>
+              <ul className="mt-2 space-y-2 text-sm leading-6 text-cyan-950">
+                <li>{recipientFit.outreachApproach.openingHook}</li>
+                <li>{recipientFit.outreachApproach.firstCta}</li>
+                <li>{recipientFit.outreachApproach.followUpAction}</li>
+              </ul>
+            </div>
+          </div>
           {recipientFit.alternativeDepartments.length ? (
             <p className="mt-2 text-xs leading-5 text-cyan-900">대체 부서: {recipientFit.alternativeDepartments.join(", ")}</p>
           ) : null}
@@ -197,6 +220,33 @@ function ContactSection({ company, score, recipientFit }: { company: CompanyLead
                 <li key={action} className="flex gap-2">
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-700" />
                   <span>{action}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="mt-4 rounded-md bg-white/70 p-3">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-900">LinkedIn 이동용 검색어</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {recipientFit.linkedinSearchKeywords.map((keyword) => (
+                <a
+                  key={keyword}
+                  href={`https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(keyword)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-cyan-950 ring-1 ring-cyan-100"
+                >
+                  {keyword} <ExternalLink size={12} />
+                </a>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 rounded-md bg-white/70 p-3">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-900">수동 확인 힌트</p>
+            <ol className="mt-2 space-y-2 text-sm leading-6 text-cyan-950">
+              {recipientFit.manualVerificationHints.map((hint) => (
+                <li key={hint} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-700" />
+                  <span>{hint}</span>
                 </li>
               ))}
             </ol>

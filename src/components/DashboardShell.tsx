@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bookmark, Building2, FileText, MailPlus, Route, Sparkles, UsersRound } from "lucide-react";
+import { Building2, FileText, MailPlus, Route, Sparkles, UsersRound } from "lucide-react";
 
 const navItems = [
   { href: "/profile", label: "학회 프로필", icon: Sparkles },
-  { href: "/analysis", label: "기업 문제 분석", icon: BarChart3 },
-  { href: "/companies", label: "기업 찾기", icon: Building2 },
-  { href: "/proposal", label: "프로젝트 제안", icon: FileText },
-  { href: "/email", label: "콜드 이메일", icon: MailPlus },
-  { href: "/saved", label: "저장한 기업", icon: Bookmark }
+  { href: "/companies", label: "기업 찾기", icon: Building2 }
 ];
 
-const workflowSteps = ["기업 발굴", "담당자/연락 루트", "제안/메일 생성", "저장/후속 관리"];
+const workflowSteps = [
+  { label: "학회 프로필", icon: Sparkles },
+  { label: "기업 찾기", icon: Building2 },
+  { label: "프로젝트 제안", icon: FileText },
+  { label: "콜드메일 생성", icon: MailPlus }
+];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,13 +23,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <main className="min-h-screen px-4 py-5 text-slate-950 md:px-8">
       <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[272px_1fr]">
         <aside className="h-fit rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-5">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/profile" className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-lg bg-slate-950 text-white shadow-sm">
               <UsersRound size={20} />
             </div>
             <div className="min-w-0">
               <p className="truncate text-lg font-bold">SocietyBridge AI</p>
-              <p className="text-xs font-medium text-slate-500">학회용 기업 협업 발굴</p>
+              <p className="text-xs font-medium text-slate-500">학회용 산학협력 아웃리치</p>
             </div>
           </Link>
 
@@ -58,23 +59,27 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
           <div className="mt-6 rounded-lg border border-teal-100 bg-teal-50/70 p-3 text-xs leading-5 text-slate-700">
             <p className="font-bold text-teal-900">운영 원칙</p>
-            <p className="mt-1">학회와 학생 조직의 기업 협업 컨택에 집중합니다. 공개된 정보와 사용자가 제공한 자료만 활용합니다.</p>
+            <p className="mt-1">최상위 작업은 학회 프로필 입력과 기업 찾기입니다. 제안서와 콜드메일은 기업 찾기 이후의 하위 흐름에서 작성합니다.</p>
           </div>
 
           <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
               <Route size={15} className="text-teal-800" />
-              산학협력 수주 흐름
+              산학협력 작업 흐름
             </div>
             <div className="mt-3 grid gap-2">
-              {workflowSteps.map((step, index) => (
-                <div key={step} className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+              {workflowSteps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                <div key={step.label} className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white text-[11px] text-teal-800 ring-1 ring-slate-200">
                     {index + 1}
                   </span>
-                  <span>{step}</span>
+                  <Icon size={13} className="text-slate-400" />
+                  <span>{step.label}</span>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </div>
         </aside>

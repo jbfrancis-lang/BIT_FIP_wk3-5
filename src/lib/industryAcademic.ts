@@ -163,6 +163,9 @@ export function evaluateCompanyDiscovery(company: CompanyLead): CompanyDiscovery
   const contactValueScore = Math.round(
     valueTier.score * 0.32 + collaborationPotentialScore * 0.28 + problemOpportunityScore * 0.26 + contactabilityScore * 0.14
   );
+  const listQualityScore = Math.round(valueTier.score * 0.3 + problemOpportunityScore * 0.34 + collaborationPotentialScore * 0.24 + contactabilityScore * 0.12);
+  const outreachScaleScore = Math.round(problemOpportunityScore * 0.34 + collaborationPotentialScore * 0.28 + contactabilityScore * 0.26 + valueTier.score * 0.12);
+  const targetFitScore = Math.round(collaborationPotentialScore * 0.35 + problemOpportunityScore * 0.35 + valueTier.score * 0.15 + contactabilityScore * 0.15);
 
   return {
     valueTier: valueTier.tier,
@@ -175,6 +178,12 @@ export function evaluateCompanyDiscovery(company: CompanyLead): CompanyDiscovery
     contactabilityScore,
     contactValueScore,
     contactValueReason: buildContactValueReason(company, valueTier.tier, collaborationPotentialScore, problemOpportunityScore, contactabilityScore),
+    listQualitySignal: signalLevel(listQualityScore),
+    listQualityReason: buildListQualityReason(company, valueTier.tier, problemOpportunityScore, collaborationPotentialScore),
+    outreachScaleSignal: signalLevel(outreachScaleScore),
+    outreachScaleReason: buildOutreachScaleReason(company, contactabilityScore, problemOpportunityScore),
+    targetFitSignal: signalLevel(targetFitScore),
+    targetFitReason: buildTargetFitReason(company, collaborationPotentialScore, problemOpportunityScore),
     discoveryTags: buildDiscoveryTags(company, valueTier.tier, problemSignalCount, contactabilityScore),
     targetRationale: `${company.name}${topicParticle(company.name)} ${company.likelyNeeds.slice(0, 2).join(", ")} 문제를 겪을 가능성이 있어, 학생·청년 관점의 리서치와 전략 제안으로 컨택할 가치가 있습니다.`,
     recommendedSearchQueries: buildRecommendedSearchQueries(company)
@@ -223,6 +232,24 @@ function buildContactValueReason(
   contactabilityScore: number
 ) {
   return `${tier} 기업으로 분류되며, 산학협력 가능성 ${signalLevel(collaborationPotentialScore)}, 문제/기회 신호 ${signalLevel(problemOpportunityScore)}, 컨택 용이성 ${signalLevel(contactabilityScore)}로 판단됩니다. 기업 인지도, 협업 가능성, 문제 신호, 공개 접점 여부를 함께 반영해 후보 풀에서 우선 검토할 가치가 있습니다.`;
+}
+
+function buildListQualityReason(
+  company: CompanyLead,
+  tier: CompanyValueTier,
+  problemOpportunityScore: number,
+  collaborationPotentialScore: number
+) {
+  return `${tier} 레퍼런스 가치와 ${company.likelyNeeds.slice(0, 2).join(", ")} 관련 문제 신호를 함께 고려하면, 단순 모수 확장이 아니라 우선 검토할 만한 후보로 분류됩니다. 문제 신호는 ${signalLevel(problemOpportunityScore)}, 협업 가능성은 ${signalLevel(collaborationPotentialScore)}입니다.`;
+}
+
+function buildOutreachScaleReason(company: CompanyLead, contactabilityScore: number, problemOpportunityScore: number) {
+  const contactHint = company.contact.publicEmail || company.contact.contactPage || company.contact.routes?.[0]?.label || "공식 접점 확인";
+  return `${contactHint}을 통해 1차 접촉 경로를 만들 수 있고, ${company.industry} 내 유사 기업으로 검색어를 확장하기 좋습니다. 문제 신호는 ${signalLevel(problemOpportunityScore)}, 접점 확인 가능성은 ${signalLevel(contactabilityScore)}입니다.`;
+}
+
+function buildTargetFitReason(company: CompanyLead, collaborationPotentialScore: number, problemOpportunityScore: number) {
+  return `${company.name}의 예상 니즈가 ${company.possibleCollaborationTypes.length}개 협업 유형과 맞닿아 있어, 첫 메시지에서 문제 가설과 제안 방향을 함께 제시하기 좋습니다. 협업 가능성 ${signalLevel(collaborationPotentialScore)}, 문제 신호 ${signalLevel(problemOpportunityScore)}로 판단됩니다.`;
 }
 
 function buildRecommendedSearchQueries(company: CompanyLead) {

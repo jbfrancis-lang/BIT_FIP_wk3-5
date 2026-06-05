@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { BookmarkPlus, Clipboard, Loader2, Send } from "lucide-react";
 
 import { DashboardShell } from "@/components/DashboardShell";
+import { EvidencePanel } from "@/components/EvidencePanel";
 import { EmptyState, ErrorBox, PageHeader, PrimaryButton } from "@/components/ui";
 import { emailCtaLabels, emailLengthLabels, emailPurposeLabels, emailToneLabels } from "@/lib/labels";
 import { companyPool, findCompanyById } from "@/lib/mockData";
@@ -40,6 +41,10 @@ function EmailContent() {
   const [collaborationHistorySummary, setCollaborationHistorySummary] = useState("");
   const [societyOutreachStrength, setSocietyOutreachStrength] = useState("");
   const [optionalAttachmentMention, setOptionalAttachmentMention] = useState("");
+  const [recipientRoleHint, setRecipientRoleHint] = useState("");
+  const [warmConnectionHint, setWarmConnectionHint] = useState("");
+  const [linkedinActivityHint, setLinkedinActivityHint] = useState("");
+  const [openingHookMemo, setOpeningHookMemo] = useState("");
   const [scoreContext, setScoreContext] = useState<CompanyScore | null>(null);
   const [output, setOutput] = useState<ColdEmailOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +98,10 @@ function EmailContent() {
           societyOutreachStrength,
           collaborationHistorySummary,
           optionalAttachmentMention,
+          recipientRoleHint,
+          warmConnectionHint,
+          linkedinActivityHint,
+          openingHookMemo,
           scoreContext: scorePayload.data
         })
       });
@@ -131,15 +140,24 @@ function EmailContent() {
   return (
     <DashboardShell>
       <PageHeader
-        eyebrow="콜드 이메일 생성"
-        title="기업별 맞춤 첫 연락 메시지를 만듭니다"
-        description="학회 소개, 기업 선정 이유, 예상 문제, 협업 방향, 명확한 CTA가 들어간 이메일과 DM을 생성합니다."
+        eyebrow="기업 찾기 / 콜드메일 생성"
+        title="기업 분석 근거를 바탕으로 첫 연락 메시지를 만듭니다"
+        description="기업 찾기에서 확인한 문제 상황, 추천 부서, 연락 루트를 근거로 1촌 신청 전후 메시지와 공식 콜드메일을 생성합니다."
       />
 
       {!society || !analysis ? (
         <EmptyState title="먼저 학회 분석이 필요합니다" description="학회 프로필 화면에서 정보를 입력하면 콜드 이메일을 생성할 수 있습니다." />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="space-y-5">
+          <EvidencePanel
+            society={society}
+            analysis={analysis}
+            environmentAnalysis={environmentAnalysis}
+            company={selectedCompany}
+            scoreContext={scoreContext}
+            mode="email"
+          />
+          <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
           <form onSubmit={handleGenerate} className="h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="grid gap-4">
               <Field label="기업 선택">
@@ -212,6 +230,27 @@ function EmailContent() {
               <Field label="첨부자료 언급">
                 <input value={optionalAttachmentMention} onChange={(event) => setOptionalAttachmentMention(event.target.value)} className="input" placeholder="예: 학회 소개서와 프로젝트 개요서를 첨부드립니다." />
               </Field>
+              <div className="rounded-md border border-cyan-100 bg-cyan-50 p-4">
+                <p className="text-sm font-bold text-cyan-950">전환 적합도 보강 정보</p>
+                <p className="mt-1 text-xs leading-5 text-cyan-900">LinkedIn은 자동 수집하지 않습니다. 사용자가 직접 확인한 담당자/관계 힌트가 있을 때만 입력하세요.</p>
+              </div>
+              <Field label="추천 수신자/담당자 힌트">
+                <input value={recipientRoleHint} onChange={(event) => setRecipientRoleHint(event.target.value)} className="input" placeholder="예: 브랜드마케팅팀 실무자 또는 제휴 담당자" />
+              </Field>
+              <Field label="동문·지인·학회 네트워크 힌트">
+                <input value={warmConnectionHint} onChange={(event) => setWarmConnectionHint(event.target.value)} className="input" placeholder="예: 연세대 동문 여부 확인 필요, 이전 산학협력 접점 없음" />
+              </Field>
+              <Field label="LinkedIn 활동성 확인 힌트">
+                <input value={linkedinActivityHint} onChange={(event) => setLinkedinActivityHint(event.target.value)} className="input" placeholder="예: 최근 게시글/댓글 활동이 있는 담당자 우선" />
+              </Field>
+              <Field label="첫 문장 Hook 메모">
+                <textarea
+                  value={openingHookMemo}
+                  onChange={(event) => setOpeningHookMemo(event.target.value)}
+                  className="input min-h-20"
+                  placeholder="예: 최근 신규 서비스 출시와 2030 고객 리서치 필요성을 연결"
+                />
+              </Field>
             </div>
 
             {error ? <div className="mt-4"><ErrorBox message={error} /></div> : null}
@@ -239,6 +278,7 @@ function EmailContent() {
               <div className="mt-4 space-y-4">
                 <OutputBlock title="이메일 제목 3개" content={output.subjectLines.join("\n")} />
                 <OutputBlock title="메시지 전략" content={output.messageStrategy} />
+                <OutputBlock title="전환 전략" content={output.conversionStrategy} />
                 <OutputBlock title="1촌 신청 전 메시지" content={output.linkedinConnectionRequest} />
                 <OutputBlock title="1촌 수락 후 메시지" content={output.linkedinAcceptedMessage} />
                 <OutputBlock title="개인화 콜드 이메일" content={output.emailBody} />
@@ -254,6 +294,7 @@ function EmailContent() {
               </div>
             )}
           </section>
+        </div>
         </div>
       )}
     </DashboardShell>

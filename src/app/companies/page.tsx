@@ -82,8 +82,8 @@ export default function CompaniesPage() {
     <DashboardShell>
       <PageHeader
         eyebrow="기업 찾기"
-        title="학회가 컨택할 만한 기업을 우선순위로 보여줍니다"
-        description="기업 문제 상황 분석을 기반으로, 어떤 기업이 해당 문제를 겪을 가능성이 높은지와 학회가 제안할 프로젝트 방향을 함께 평가합니다."
+        title="기업 분석을 확인하고 다음 작업으로 이동합니다"
+        description="각 기업 카드에서 문제 상황, 추천 부서, 연락 루트를 먼저 확인한 뒤 프로젝트 제안 또는 콜드메일 생성으로 내려갑니다."
         action={society && analysis ? (
           <div className="flex flex-col gap-2 sm:items-end">
             <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1">
@@ -121,7 +121,7 @@ export default function CompaniesPage() {
               현재 프로필: <strong className="text-slate-950">{society.societyName}</strong>
               <span className="ml-2 text-slate-400">전체 후보 {companyPool.length}개 중 {selectedCompanies.length}개 분석</span>
             </span>
-            <span className="text-xs font-semibold text-slate-500">1차 분류: 기업 Value Tier · 2차 분류: 적합도</span>
+            <span className="text-xs font-semibold text-slate-500">기업 분석 → 프로젝트 제안 / 콜드메일 생성</span>
             <Link href="/profile" className="inline-flex items-center gap-2 font-semibold text-cyan-800"><ArrowLeft size={16} />학회 정보 수정</Link>
           </div>
 

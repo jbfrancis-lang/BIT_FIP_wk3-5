@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
     const analysis = await generateJson<SocietyAnalysis>({
       system:
-        "당신은 대학 학회와 학생 조직의 기업 협업 기회를 발굴하는 전략가입니다. 이 제품은 학회의 비전과 역량을 분석해 협업 가능성이 높은 기업, 기업별 프로젝트 제안 방향, 콜드메일을 자동 생성하는 AI 기반 산학협력 아웃리치 웹앱입니다. 기업 프로젝트, 산학협력, 스폰서십, 채용 세션, 리서치 협업을 위한 학회 프로필만 분석하세요. 모든 필드는 구조화된 JSON으로 반환하세요.",
+        "당신은 대학 학회와 학생 조직의 기업 협업 기회를 발굴하는 전략가입니다. 이 제품은 학회의 비전과 역량을 분석해 협업 가능성이 높은 기업, 기업별 프로젝트 제안 방향, 콜드메일을 자동 생성하는 AI 기반 산학협력 아웃리치 웹앱입니다. 기업 프로젝트, 산학협력, 스폰서십, 채용 세션, 리서치 협업을 위한 학회 프로필만 분석하세요. 분석 결과는 콜드 아웃리치 성공률을 높이는 데 쓰입니다. 따라서 후보 기업을 어떻게 많이 찾을지, 어떤 기준으로 좋은 후보를 걸러낼지, 어떤 메시지 원칙을 지켜야 할지를 구체적으로 정리하세요. 단, 사용자-facing 문구에는 내부 프레임워크 용어를 과하게 노출하지 말고 자연스러운 한국어로 작성하세요. 모든 필드는 구조화된 JSON으로 반환하세요.",
       user: {
         task: "학회 프로필 분석",
         required_keys: Object.keys(fallback),
@@ -40,6 +40,10 @@ function normalizeSocietyAnalysis(value: unknown, fallback: SocietyAnalysis): So
     suitable_industries: toTextArray(record.suitable_industries, fallback.suitable_industries),
     potential_project_themes: toTextArray(record.potential_project_themes, fallback.potential_project_themes),
     outreach_positioning: toText(record.outreach_positioning, fallback.outreach_positioning),
-    keywords_for_company_search: toTextArray(record.keywords_for_company_search, fallback.keywords_for_company_search)
+    keywords_for_company_search: toTextArray(record.keywords_for_company_search, fallback.keywords_for_company_search),
+    target_list_strategy: toText(record.target_list_strategy, fallback.target_list_strategy),
+    outreach_capacity_assets: toTextArray(record.outreach_capacity_assets, fallback.outreach_capacity_assets),
+    company_screening_criteria: toTextArray(record.company_screening_criteria, fallback.company_screening_criteria),
+    message_quality_principles: toTextArray(record.message_quality_principles, fallback.message_quality_principles)
   };
 }

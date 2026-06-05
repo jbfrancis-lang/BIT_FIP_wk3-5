@@ -1,6 +1,6 @@
 import { collaborationTypeLabels } from "@/lib/labels";
 import { evaluateCompanyDiscovery, getCompanyValueTier } from "@/lib/industryAcademic";
-import { buildLinkedInOutreachMessages } from "@/lib/outreachTemplates";
+import { buildConversionStrategyNotes, buildLinkedInOutreachMessages } from "@/lib/outreachTemplates";
 import type {
   ColdEmailOutput,
   ColdEmailRequest,
@@ -70,7 +70,26 @@ export function fallbackAnalyzeSociety(input: SocietyProfileInput): SocietyAnaly
       "제품 사용성 피드백과 개선 제안"
     ],
     outreach_positioning: `${input.societyName}을 기업이 내부 데이터만으로 보기 어려운 학생·청년 고객의 실제 맥락을 빠르게 조사하고 전략 제안으로 정리하는 파트너로 포지셔닝하세요.`,
-    keywords_for_company_search: keywords
+    keywords_for_company_search: keywords,
+    target_list_strategy:
+      "먼저 기업 인지도와 협업 레퍼런스 가치로 후보를 넓게 분류한 뒤, 같은 그룹 안에서 문제 신호, 공개 접점, 학회 역량과의 연결성을 기준으로 컨택 우선순위를 좁히세요.",
+    outreach_capacity_assets: [
+      "여러 기업에 반복 적용 가능한 학회 소개 문구와 프로젝트 개요",
+      "기업별 문제 가설을 빠르게 바꿔 넣을 수 있는 콜드메일 템플릿",
+      "설문·IDI·경쟁 분석 등 짧은 기간에 수행 가능한 표준 프로젝트 모듈"
+    ],
+    company_screening_criteria: [
+      "2030 또는 대학생 고객·인재 접점이 있는가",
+      "신규 고객 유입, 리텐션, 브랜딩, 제품 피드백 중 하나 이상의 문제가 예상되는가",
+      "공식 문의 페이지, 공개 이메일, 담당 부서 힌트 등 1차 접촉 경로가 있는가",
+      "학회의 기존 활동이나 과거 프로젝트와 연결되는 제안 논리를 만들 수 있는가"
+    ],
+    message_quality_principles: [
+      "기업 문제를 단정하지 않고 가설로 제시",
+      "학회 소개보다 기업이 얻을 산출물과 기대효과를 먼저 명확화",
+      "첫 요청은 프로젝트 확정이 아니라 짧은 미팅, 피드백, 유관 부서 소개처럼 낮은 CTA로 설계",
+      "미검증 연락처나 사적 정보를 생성하지 않음"
+    ]
   };
 }
 
@@ -101,7 +120,22 @@ export function fallbackAnalyzeEnvironment(input: SocietyProfileInput, analysis:
     },
     strategic_fit_summary: `${input.societyName}${topicParticle(input.societyName)} 기업의 내부 문제 상황과 외부 시장 압력을 먼저 정의하고, 그중 학생·청년 관점의 리서치로 풀 수 있는 문제를 가진 기업을 우선 컨택해야 합니다.`,
     recommended_target_company_criteria: ["Tier 1: 기업 인지도와 협업 레퍼런스 가치가 매우 높은 네임드 기업", "Tier 2: 특정 산업 또는 2030 고객 접점에서 인지도가 높아 포트폴리오 가치가 충분한 기업", "Tier 3: 브랜드 파급력은 낮지만 문제 상황이 명확하면 파일럿 또는 대량 아웃리치 후보가 될 기업", "같은 Tier 안에서는 정의된 기업 문제 상황과 직접 연결되는 정도가 높음", "학생·청년 고객 또는 인재 접점이 있음", "공개 문의 채널이 있음", "기업이 받을 산출물이 명확함"],
-    problem_keywords_for_company_search: [...industries, "2030 고객", "락인", "재방문", "브랜드 경험", "제품 피드백", "시장 조사"].filter(Boolean).slice(0, 12)
+    problem_keywords_for_company_search: [...industries, "2030 고객", "락인", "재방문", "브랜드 경험", "제품 피드백", "시장 조사"].filter(Boolean).slice(0, 12),
+    outreach_opportunity_summary: {
+      target_pool_logic:
+        "산업 키워드만으로 기업을 찾기보다, 기업의 성장 과제와 학회가 줄 수 있는 리서치/전략 산출물이 맞닿는 후보를 우선 모읍니다.",
+      list_quality_logic:
+        "좋은 후보는 네임드 여부뿐 아니라 문제 신호, 학생·청년 접점, 공개 접점, 프로젝트 산출물의 명확성이 함께 확인되는 기업입니다.",
+      contact_volume_logic:
+        "기업별 메시지를 완전히 새로 쓰기보다 공통 소개와 제안 구조를 유지하고, 문제 가설·추천 부서·CTA만 기업별로 바꿔 다수 기업에 빠르게 접근합니다.",
+      evidence_to_collect_before_outreach: [
+        "최근 사업 맥락 또는 캠페인",
+        "고객군·사용자 접점",
+        "예상 문제/기회 신호",
+        "공식 문의 경로와 추천 부서",
+        "학회가 제공할 수 있는 구체 산출물"
+      ]
+    }
   };
 }
 
@@ -147,12 +181,17 @@ export function fallbackScoreCompany(input: SocietyProfileInput, analysis: Socie
     : `${company.name}의 니즈는 학회가 정의한 기업 문제 상황과 연결될 수 있습니다.`;
   const solvableArea = `${company.likelyNeeds.slice(0, 2).join(", ")} 영역은 ${analysis.core_capabilities.slice(0, 3).join(", ")} 역량으로 문제 정의, 고객 리서치, 실행 제안까지 연결할 수 있습니다.`;
   const whyOurSociety = `${input.societyName}${topicParticle(input.societyName)} ${analysis.outreach_positioning}이라는 포지셔닝을 갖고 있어, ${company.name}이 내부에서 보기 어려운 학생·청년 관점의 외부 인사이트를 제공할 수 있습니다.`;
+  const listQualityReason = discovery.listQualityReason;
+  const outreachScaleReason = discovery.outreachScaleReason;
+  const targetFitReason = discovery.targetFitReason;
+  const approachStrategy = `${company.suggestedDepartment} 또는 ${company.recipientFit?.recommendedRecipientTitle || "관련 실무 담당자"}에게 먼저 접근하고, 첫 메시지에서는 ${company.likelyNeeds[0] || "기업의 예상 과제"}에 대한 문제 가설과 2~3주 내 제공 가능한 산출물을 짧게 제시하세요.`;
+  const conversionHypothesis = `${company.name}${topicParticle(company.name)} ${company.likelyNeeds.slice(0, 2).join(", ")}에 대한 관심이 있을 가능성이 있어, 공식 문의와 담당자 탐색을 병행하면 미팅 전환 가능성을 높일 수 있습니다. 단, 첫 요청은 확정 제안이 아니라 유관 부서 연결 또는 15분 검토 미팅으로 낮추는 편이 적절합니다.`;
 
   return {
     fitScore: score,
     priorityTier,
     tierReason: `${priorityTier}로 분류됩니다. ${valueTier.reason} ${discovery.contactValueReason} 화면의 적합도는 같은 Tier 안에서 컨택 우선순위를 나누기 위한 보조 지표입니다.`,
-    whyGoodTarget: `${company.name}${topicParticle(company.name)} ${company.industry} 영역에서 ${company.likelyNeeds.slice(0, 2).join(", ")} 니즈가 있어 ${input.societyName}의 관심 방향과 연결됩니다. 후보 발굴 태그: ${discovery.discoveryTags.join(", ")}.`,
+    whyGoodTarget: `${company.name}${topicParticle(company.name)} ${company.industry} 영역에서 ${company.likelyNeeds.slice(0, 2).join(", ")} 니즈가 있어 ${input.societyName}의 관심 방향과 연결됩니다. ${discovery.listQualityReason} 후보 발굴 태그: ${discovery.discoveryTags.join(", ")}.`,
     expectedCompanyProblem: company.likelyNeeds.join(", "),
     solvableArea,
     whyOurSociety,
@@ -161,9 +200,14 @@ export function fallbackScoreCompany(input: SocietyProfileInput, analysis: Socie
     contactAvailability: company.contact.publicEmail
       ? `공개 이메일 ${company.contact.publicEmail}로 연락할 수 있습니다.`
       : "No verified public email is available. Use the company contact page or partnership inquiry form.",
-    fitReasoning: `${analysis.outreach_positioning} 이 포지셔닝은 ${company.description}라는 맥락에서 기업이 바로 이해할 수 있는 협업 가치로 전환됩니다.`,
+    fitReasoning: `${analysis.outreach_positioning} 이 포지셔닝은 ${company.description}라는 맥락에서 기업이 바로 이해할 수 있는 협업 가치로 전환됩니다. ${approachStrategy}`,
     risks: ["담당 부서가 명확하지 않으면 응답률이 낮을 수 있습니다.", "기업 내부 데이터 접근이 필요한 주제는 범위를 조정해야 합니다."],
-    environmentProblemFit
+    environmentProblemFit,
+    listQualityReason,
+    outreachScaleReason,
+    targetFitReason,
+    approachStrategy,
+    conversionHypothesis
   };
 }
 
@@ -258,6 +302,7 @@ export function fallbackGenerateColdEmail(request: ColdEmailRequest): ColdEmailO
   const companyValue = request.scoreContext?.solvableArea || "설문, 인터뷰, 시장 조사, 경쟁 사례 분석을 바탕으로 기업 내부에서 검토 가능한 인사이트와 실행 제안을 제공할 수 있습니다.";
   const attachmentSentence = request.optionalAttachmentMention || "필요하시면 학회 소개자료와 세부 협업 방향을 함께 전달드리겠습니다.";
   const linkedInTemplates = buildLinkedInOutreachMessages(request);
+  const conversionNotes = buildConversionStrategyNotes(request);
 
   return {
     subjectLines: [
@@ -266,11 +311,12 @@ export function fallbackGenerateColdEmail(request: ColdEmailRequest): ColdEmailO
       `대외협력 담당 부서 연결 요청`
     ],
     messageStrategy: `${company}를 선택한 이유를 먼저 밝히고, ${expectedProblem} 문제 가설을 낮은 강도로 제시한 뒤, ${direction}을 검토 가능한 협업 제안으로 연결합니다. 첫 요청은 계약이나 확정 제안이 아니라 담당 부서 연결 또는 20분 미팅으로 낮춥니다.`,
+    conversionStrategy: conversionNotes.summary,
     linkedinConnectionRequest: linkedInTemplates.linkedinConnectionRequest,
     linkedinAcceptedMessage: linkedInTemplates.linkedinAcceptedMessage,
-    emailBody: `안녕하세요, ${company} 담당자님.\n\n저는 ${society}의 ${sender}입니다. ${society}${topicParticle(society)} ${request.society?.oneLineIntroduction || "기업의 실제 과제를 학생 관점의 리서치와 전략 제안으로 연결하는 학생 조직"}입니다.\n\n${company}에 연락드린 이유는 ${companyReason} 특히 ${expectedProblem} 측면에서 외부 관점의 리서치와 학생·청년 고객 인사이트가 의미 있는 검토 자료가 될 수 있다고 보았습니다.\n\n이에 ${direction} 방향의 협업 가능성을 제안드립니다. ${companyValue} 이를 통해 ${company}에서는 고객 이해, 신규 프로젝트 검증, 실행 우선순위 논의에 활용 가능한 자료를 확보하실 수 있을 것으로 기대합니다.\n\n${attachmentSentence}\n\n가능하시다면 관련 담당 부서 연결 또는 20분 내외의 온라인 미팅을 통해 협업 가능성을 논의드리고자 합니다. 검토 후 회신 주시면 감사하겠습니다.\n\n감사합니다.\n${sender} 드림`,
+    emailBody: `안녕하세요, ${company} 담당자님.\n\n저는 ${society}의 ${sender}입니다. ${society}${topicParticle(society)} ${request.society?.oneLineIntroduction || "기업의 실제 과제를 학생 관점의 리서치와 전략 제안으로 연결하는 학생 조직"}입니다.\n\n${company}에 연락드린 이유는 ${companyReason} ${conversionNotes.openingHook} 특히 ${expectedProblem} 측면에서 외부 관점의 리서치와 학생·청년 고객 인사이트가 의미 있는 검토 자료가 될 수 있다고 보았습니다.\n\n이에 ${direction} 방향의 협업 가능성을 제안드립니다. ${companyValue} 이를 통해 ${company}에서는 고객 이해, 신규 프로젝트 검증, 실행 우선순위 논의에 활용 가능한 자료를 확보하실 수 있을 것으로 기대합니다.\n\n${attachmentSentence}\n\n가능하시다면 ${conversionNotes.roleHint} 연결 또는 20분 내외의 온라인 미팅을 통해 협업 가능성을 논의드리고자 합니다. 검토 후 회신 주시면 감사하겠습니다.\n\n감사합니다.\n${sender} 드림`,
     shortLinkedInDm: `안녕하세요. ${society}에서 ${company}와의 산학협력 가능성 검토를 요청드리고자 연락드립니다. ${direction} 방향으로 담당 부서 연결 또는 간단한 논의가 가능하실지 확인 부탁드립니다.`,
-    followUpEmailMessage: `안녕하세요, 이전에 ${society}의 ${company} 협업 제안 검토를 요청드린 바 있어 후속으로 연락드립니다. 검토에 필요한 소개자료나 협업 방향을 추가로 전달드릴 수 있으며, 관련 담당 부서 연결 또는 20분 내외의 온라인 미팅 가능 여부를 확인해 주시면 감사하겠습니다.`,
+    followUpEmailMessage: `안녕하세요, 이전에 ${society}의 ${company} 협업 제안 검토를 요청드린 바 있어 후속으로 연락드립니다. 자료 재송부보다는 관련 담당 부서 연결 또는 20분 내외의 온라인 미팅 가능 여부만 짧게 확인드리고자 합니다. 검토 가능하신 방향을 알려주시면 그에 맞춰 추가 자료를 전달드리겠습니다.`,
     oneSentencePitch: `${society}${topicParticle(society)} 학생·청년 고객 인사이트와 구조화된 분석 역량을 바탕으로 ${company}의 과제를 검토 가능한 협업 제안으로 구체화합니다.`,
     suggestedCtaSentence: "가능하시다면 관련 담당 부서 연결 또는 다음 주 중 20분 내외의 온라인 미팅 가능 여부를 회신 부탁드립니다.",
     qualityChecklist: [
@@ -278,6 +324,7 @@ export function fallbackGenerateColdEmail(request: ColdEmailRequest): ColdEmailO
       "문제/기회 가설이 단정이 아니라 검토 관점으로 표현됨",
       "제안 방향과 기업 기대가치가 한 문단 안에서 연결됨",
       "CTA가 담당 부서 연결 또는 짧은 미팅으로 낮게 설계됨",
+      "Who/How 전환 전략이 수신자 유형, 첫 문장 hook, 후속 액션으로 구분됨",
       "사적 연락처나 검증되지 않은 정보가 생성되지 않음"
     ]
   };

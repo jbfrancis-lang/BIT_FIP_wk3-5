@@ -50,6 +50,10 @@ export type SocietyAnalysis = {
   potential_project_themes: string[];
   outreach_positioning: string;
   keywords_for_company_search: string[];
+  target_list_strategy: string;
+  outreach_capacity_assets: string[];
+  company_screening_criteria: string[];
+  message_quality_principles: string[];
 };
 
 export type EnvironmentAnalysis = {
@@ -76,6 +80,12 @@ export type EnvironmentAnalysis = {
   strategic_fit_summary: string;
   recommended_target_company_criteria: string[];
   problem_keywords_for_company_search: string[];
+  outreach_opportunity_summary: {
+    target_pool_logic: string;
+    list_quality_logic: string;
+    contact_volume_logic: string;
+    evidence_to_collect_before_outreach: string[];
+  };
 };
 
 export type CompanySize =
@@ -125,11 +135,23 @@ export type ContactRoutePriority = {
   reason: string;
 };
 
+export type OutreachApproach = {
+  subjectHook: string;
+  openingHook: string;
+  firstCta: string;
+  followUpAction: string;
+};
+
 export type RecipientFit = {
   primaryDepartment: string;
   alternativeDepartments: string[];
   recommendedRecipientTitle: string;
   criteria: RecipientFitCriteria;
+  responseLikelihood: "높음" | "보통" | "확인 필요";
+  responseSignals: string[];
+  linkedinSearchKeywords: string[];
+  manualVerificationHints: string[];
+  outreachApproach: OutreachApproach;
   reasoning: string;
   firstAction: string;
   userActionChecklist: string[];
@@ -160,6 +182,12 @@ export type CompanyDiscoveryProfile = {
   contactabilityScore: number;
   contactValueScore: number;
   contactValueReason: string;
+  listQualitySignal: DiscoverySignalLevel;
+  listQualityReason: string;
+  outreachScaleSignal: DiscoverySignalLevel;
+  outreachScaleReason: string;
+  targetFitSignal: DiscoverySignalLevel;
+  targetFitReason: string;
   discoveryTags: string[];
   targetRationale: string;
   recommendedSearchQueries: string[];
@@ -197,6 +225,11 @@ export type CompanyScore = {
   fitReasoning: string;
   risks: string[];
   environmentProblemFit: string;
+  listQualityReason: string;
+  outreachScaleReason: string;
+  targetFitReason: string;
+  approachStrategy: string;
+  conversionHypothesis: string;
 };
 
 export type ProposalTone = "strategic" | "professional" | "student_friendly" | "concise" | "formal";
@@ -272,12 +305,17 @@ export type ColdEmailRequest = {
   societyOutreachStrength: string;
   collaborationHistorySummary: string;
   optionalAttachmentMention: string;
+  recipientRoleHint?: string;
+  warmConnectionHint?: string;
+  linkedinActivityHint?: string;
+  openingHookMemo?: string;
   scoreContext?: CompanyScore | null;
 };
 
 export type ColdEmailOutput = {
   subjectLines: string[];
   messageStrategy: string;
+  conversionStrategy: string;
   linkedinConnectionRequest: string;
   linkedinAcceptedMessage: string;
   emailBody: string;

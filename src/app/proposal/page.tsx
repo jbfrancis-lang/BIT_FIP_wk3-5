@@ -6,6 +6,7 @@ import { Clipboard, Download, Loader2, Send, Upload } from "lucide-react";
 import JSZip from "jszip";
 
 import { DashboardShell } from "@/components/DashboardShell";
+import { EvidencePanel } from "@/components/EvidencePanel";
 import { EmptyState, ErrorBox, PageHeader, PrimaryButton } from "@/components/ui";
 import { collaborationTypeLabels, proposalLengthLabels, proposalToneLabels } from "@/lib/labels";
 import { companyPool, findCompanyById } from "@/lib/mockData";
@@ -158,15 +159,24 @@ function ProposalContent() {
   return (
     <DashboardShell>
       <PageHeader
-        eyebrow="프로젝트 제안 생성"
-        title="기업별 협업 제안서를 작성합니다"
-        description="선택한 기업의 니즈와 학회의 역량을 연결해 실제 산학협력·기업 프로젝트 제안서 형식으로 정리합니다."
+        eyebrow="기업 찾기 / 프로젝트 제안"
+        title="기업 분석 근거를 바탕으로 프로젝트 제안서를 작성합니다"
+        description="기업 찾기에서 선택한 기업의 문제 상황과 내외부 환경 분석을 확인한 뒤, 실제 산학협력 제안서 형식으로 정리합니다."
       />
 
       {!society || !analysis ? (
         <EmptyState title="먼저 학회 분석이 필요합니다" description="학회 프로필 화면에서 정보를 입력하면 프로젝트 제안을 생성할 수 있습니다." />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="space-y-5">
+          <EvidencePanel
+            society={society}
+            analysis={analysis}
+            environmentAnalysis={environmentAnalysis}
+            company={selectedCompany}
+            scoreContext={scoreContext}
+            mode="proposal"
+          />
+          <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
           <form onSubmit={handleGenerate} className="h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="grid gap-4">
               <Field label="기업 선택">
@@ -319,6 +329,7 @@ function ProposalContent() {
               </div>
             )}
           </section>
+        </div>
         </div>
       )}
     </DashboardShell>

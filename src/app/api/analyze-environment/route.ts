@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     const analysis = await generateJson<EnvironmentAnalysis>({
       system:
-        "당신은 학생 학회와 대학 동아리가 컨택할 기업의 문제 상황을 분석하는 B2B 전략 컨설턴트입니다. 여기서 내부환경분석은 학회의 내부 분석이 아니라, 타깃 기업들이 내부적으로 겪을 법한 성장 과제, 고객/사용자 마찰, 제품/서비스 갭, GTM/브랜딩 문제, 데이터/인사이트 공백을 분석하는 것입니다. 외부환경분석은 해당 기업들이 놓인 시장 트렌드, 경쟁 압력, 고객 행동 변화, 규제/사회 요인을 분석하는 것입니다. 이 분석을 기반으로 어떤 기업을 찾아야 하는지 기준을 제시하세요.",
+        "당신은 학생 학회와 대학 동아리가 컨택할 기업의 문제 상황을 분석하는 B2B 전략 컨설턴트입니다. 여기서 내부환경분석은 학회의 내부 분석이 아니라, 타깃 기업들이 내부적으로 겪을 법한 성장 과제, 고객/사용자 마찰, 제품/서비스 갭, GTM/브랜딩 문제, 데이터/인사이트 공백을 분석하는 것입니다. 외부환경분석은 해당 기업들이 놓인 시장 트렌드, 경쟁 압력, 고객 행동 변화, 규제/사회 요인을 분석하는 것입니다. 이 분석을 기반으로 어떤 기업을 찾아야 하는지 기준을 제시하세요. 특히 다수 기업을 빠르게 발굴하되 품질을 잃지 않기 위해, 후보군을 넓히는 기준, 좋은 후보를 판별하는 기준, 콜드메일 전 확인해야 할 증거 자료를 구체화하세요. 사용자-facing 문구는 자연스러운 한국어로 작성하고 내부 프레임워크 용어는 과하게 드러내지 마세요.",
       user: {
         task: "기업 문제 상황 기반 내부/외부 환경 분석",
         required_keys: Object.keys(fallback),
@@ -37,6 +37,7 @@ function normalizeEnvironmentAnalysis(value: unknown, fallback: EnvironmentAnaly
   const record = isRecord(value) ? value : {};
   const internal = isRecord(record.internal_environment_analysis) ? record.internal_environment_analysis : {};
   const external = isRecord(record.external_environment_analysis) ? record.external_environment_analysis : {};
+  const opportunity = isRecord(record.outreach_opportunity_summary) ? record.outreach_opportunity_summary : {};
 
   return {
     internal_environment_analysis: {
@@ -61,6 +62,15 @@ function normalizeEnvironmentAnalysis(value: unknown, fallback: EnvironmentAnaly
     },
     strategic_fit_summary: toText(record.strategic_fit_summary, fallback.strategic_fit_summary),
     recommended_target_company_criteria: toTextArray(record.recommended_target_company_criteria, fallback.recommended_target_company_criteria),
-    problem_keywords_for_company_search: toTextArray(record.problem_keywords_for_company_search, fallback.problem_keywords_for_company_search)
+    problem_keywords_for_company_search: toTextArray(record.problem_keywords_for_company_search, fallback.problem_keywords_for_company_search),
+    outreach_opportunity_summary: {
+      target_pool_logic: toText(opportunity.target_pool_logic, fallback.outreach_opportunity_summary.target_pool_logic),
+      list_quality_logic: toText(opportunity.list_quality_logic, fallback.outreach_opportunity_summary.list_quality_logic),
+      contact_volume_logic: toText(opportunity.contact_volume_logic, fallback.outreach_opportunity_summary.contact_volume_logic),
+      evidence_to_collect_before_outreach: toTextArray(
+        opportunity.evidence_to_collect_before_outreach,
+        fallback.outreach_opportunity_summary.evidence_to_collect_before_outreach
+      )
+    }
   };
 }

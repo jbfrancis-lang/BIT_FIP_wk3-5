@@ -32,6 +32,11 @@ export function CompanyCard({ company, score }: { company: CompanyLead; score: C
 
   return (
     <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+        <p className="text-sm font-bold text-slate-950">기업 분석</p>
+        <p className="text-xs font-semibold text-slate-500">분석 확인 후 프로젝트 제안 또는 콜드메일 생성으로 이동</p>
+      </div>
+
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -62,7 +67,9 @@ export function CompanyCard({ company, score }: { company: CompanyLead; score: C
         <Info label="추천 프로젝트 방향" value={score?.recommendedProjectDirection || "분석 대기 중입니다."} />
         <Info label="추천 접촉 부서" value={company.suggestedDepartment} />
         <Info label="1순위 수신자" value={`${recipientFit.primaryDepartment} · ${recipientFit.recommendedRecipientTitle}`} />
-        <Info label="담당자 적합도" value={`${fitLevel(recipientFit.criteria.overall)} · ${recipientFit.primaryDepartment}의 ${recipientFit.recommendedRecipientTitle}에게 먼저 접근하는 것을 추천드립니다.`} />
+        <Info label="전환 적합도" value={`${recipientFit.responseLikelihood} · ${recipientFit.primaryDepartment}의 ${recipientFit.recommendedRecipientTitle}에게 먼저 접근하는 것을 추천드립니다.`} />
+        <Info label="응답 가능성 신호" value={recipientFit.responseSignals.slice(0, 2).join(" ")} />
+        <Info label="권장 첫 문장 Hook" value={recipientFit.outreachApproach.openingHook} />
         <Info label="사용자가 해야 할 일" value={recipientFit.userActionChecklist.slice(0, 2).join(" ")} />
         <Info label="연락 가능성" value={contactAvailability(company, score?.contactAvailability)} />
       </div>
@@ -84,6 +91,7 @@ export function CompanyCard({ company, score }: { company: CompanyLead; score: C
             ) : null}
           </div>
           <p className="max-w-3xl text-xs leading-5 text-slate-500">{recipientFit.firstAction}</p>
+          <p className="max-w-3xl text-xs leading-5 text-slate-500">검색어 예시: {recipientFit.linkedinSearchKeywords.slice(0, 2).join(" / ")}</p>
           <p className="max-w-3xl text-xs leading-5 text-slate-500">{contactAvailability(company, score?.contactAvailability)}</p>
         </div>
 
@@ -106,11 +114,11 @@ export function CompanyCard({ company, score }: { company: CompanyLead; score: C
           </Link>
           <Link href={`/proposal?company=${company.id}`} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
             <FileText size={16} />
-            제안서 생성
+            프로젝트 제안
           </Link>
           <Link href={`/email?company=${company.id}`} className="inline-flex items-center justify-center gap-2 rounded-md bg-cyan-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-cyan-900">
             <MailPlus size={16} />
-            이메일 생성
+            콜드메일 생성
           </Link>
         </div>
       </div>
@@ -125,10 +133,4 @@ function Info({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-sm leading-6 text-slate-700">{value}</p>
     </div>
   );
-}
-
-function fitLevel(score: number) {
-  if (score >= 78) return "높음";
-  if (score >= 62) return "보통";
-  return "확인 필요";
 }

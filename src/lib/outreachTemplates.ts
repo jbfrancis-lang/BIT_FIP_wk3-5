@@ -28,6 +28,22 @@ export function buildLinkedInOutreachMessages(request: ColdEmailRequest) {
   };
 }
 
+export function buildConversionStrategyNotes(request: ColdEmailRequest) {
+  const companyName = request.company?.name?.trim() || "대상 기업";
+  const roleHint = request.recipientRoleHint?.trim() || "추천 부서 또는 산학협력 유관 실무자";
+  const warmConnection = request.warmConnectionHint?.trim() || "동문·지인·학회 선배 경유 가능성은 수동 확인 필요";
+  const activityHint = request.linkedinActivityHint?.trim() || "최근 LinkedIn 활동성은 사용자가 직접 확인 필요";
+  const openingHook = request.openingHookMemo?.trim() || `${companyName}의 최근 사업 맥락과 학생·청년 관점의 외부 리서치 필요성을 연결`;
+
+  return {
+    roleHint,
+    warmConnection,
+    activityHint,
+    openingHook,
+    summary: `Who는 ${roleHint}를 우선 수신자로 두고, ${warmConnection}와 ${activityHint}를 수동 확인한 뒤 접근합니다. How는 첫 문장에서 ${openingHook} 흐름을 제시하고, 첫 요청은 담당 부서 연결 또는 짧은 미팅으로 낮춥니다.`
+  };
+}
+
 function topicParticle(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return "은";

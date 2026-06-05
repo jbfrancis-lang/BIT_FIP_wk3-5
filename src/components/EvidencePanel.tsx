@@ -20,9 +20,9 @@ export function EvidencePanel({ society, analysis, environmentAnalysis, company,
   if (!society || !analysis || !company || !environment) {
     return (
       <section className="rounded-lg border border-dashed border-slate-300 bg-white/80 p-5 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">내외부 환경 분석 기반 근거 자료</p>
+        <p className="text-sm font-bold text-slate-950">기업·시장 분석 기반 근거 자료</p>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          학회 프로필과 기업을 선택하면 {modeLabel}에 활용할 기업 문제 상황, 외부 시장 압력, 협업 근거가 이 영역에 표시됩니다.
+          학회 프로필과 기업을 선택하면 {modeLabel}에 활용할 기업 문제 상황, 시장 압력, 협업 근거가 이 영역에 표시됩니다.
         </p>
       </section>
     );
@@ -46,7 +46,7 @@ export function EvidencePanel({ society, analysis, environmentAnalysis, company,
     <section className="rounded-lg border border-teal-100 bg-teal-50/70 p-5 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-sm font-bold text-teal-900">내외부 환경 분석 기반 근거 자료</p>
+          <p className="text-sm font-bold text-teal-900">기업·시장 분석 기반 근거 자료</p>
           <h2 className="mt-1 text-xl font-bold text-slate-950">
             {company.name} {modeLabel}의 판단 근거
           </h2>
@@ -63,8 +63,8 @@ export function EvidencePanel({ society, analysis, environmentAnalysis, company,
 
       <div className="mt-4 grid gap-3 lg:grid-cols-4">
         <EvidenceBlock title="기업 문제 가설" items={company.likelyNeeds.slice(0, 3)} />
-        <EvidenceBlock title="내부 환경 신호" items={internalSignals} />
-        <EvidenceBlock title="외부 환경 신호" items={externalSignals} />
+        <EvidenceBlock title="기업 내부 문제 신호" items={internalSignals} />
+        <EvidenceBlock title="시장/외부 변화 신호" items={externalSignals} />
         <EvidenceBlock title="산출물 반영 포인트" items={actionPoints.slice(0, 3)} />
       </div>
 

@@ -23,8 +23,8 @@ const primaryActions = [
 
 const nestedFlow = [
   { label: "기업 분석", description: "문제 상황, 추천 부서, 컨택 루트 확인" },
-  { label: "프로젝트 제안", description: "내외부 환경 근거를 바탕으로 제안서 작성" },
-  { label: "콜드메일 생성", description: "동일한 근거를 바탕으로 공식 메시지 작성" }
+  { label: "프로젝트 제안", description: "기업·시장 분석 근거를 바탕으로 제안서 작성" },
+  { label: "콜드메일 생성", description: "동일한 기업별 근거를 바탕으로 공식 메시지 작성" }
 ];
 
 export default function HomePage() {

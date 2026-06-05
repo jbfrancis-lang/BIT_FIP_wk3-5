@@ -161,7 +161,7 @@ function ProposalContent() {
       <PageHeader
         eyebrow="기업 찾기 / 프로젝트 제안"
         title="기업 분석 근거를 바탕으로 프로젝트 제안서를 작성합니다"
-        description="기업 찾기에서 선택한 기업의 문제 상황과 내외부 환경 분석을 확인한 뒤, 실제 산학협력 제안서 형식으로 정리합니다."
+        description="기업 찾기에서 선택한 기업의 문제 상황과 시장 변화 신호를 확인한 뒤, 실제 산학협력 제안서 형식으로 정리합니다."
       />
 
       {!society || !analysis ? (

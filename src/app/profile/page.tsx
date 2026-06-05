@@ -262,10 +262,9 @@ export default function HomePage() {
               <ResultBlock title="아웃리치 포지셔닝" content={analysis.outreach_positioning} />
               <BadgeGroup title="핵심 역량" items={analysis.core_capabilities} />
               <BadgeGroup title="잠재 프로젝트 주제" items={analysis.potential_project_themes} />
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Link href="/analysis" className="action-link">내부/외부 분석 <ArrowRight size={16} /></Link>
-                <Link href="/companies" className="action-link">기업 찾기 <ArrowRight size={16} /></Link>
-              </div>
+              <Link href="/companies" className="action-link">
+                기업 찾기 <ArrowRight size={16} />
+              </Link>
             </div>
           ) : (
             <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5">
